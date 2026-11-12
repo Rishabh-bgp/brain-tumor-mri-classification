@@ -77,3 +77,5 @@ h1 span{color:var(--teal)}
 .why{grid-template-columns:1fr}.bar{grid-template-columns:92px 1fr 52px}.workstation{padding:10px 12px}.hero{padding-left:14px;padding-right:14px}}
 .placeholder[hidden],.scanline[hidden]{display:none}
 .sample:disabled{opacity:.45;cursor:wait}
+.sample{position:relative}.sample .miss-badge{position:absolute;top:10px;left:50%;transform:translateX(-50%);margin:0;padding:2px 8px;font-size:10px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;background:rgba(40,8,20,.88);color:#fda4af;border:1px solid rgba(251,113,133,.7);font-weight:600}
+.sample.miss{border-color:rgba(251,113,133,.45)}

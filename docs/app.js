@@ -195,6 +195,10 @@
         const b = document.createElement("button"); b.className = "sample"; b.dataset.file = p.file; b.type = "button";
         b.disabled = true; b.title = "Model still loading…";
         b.innerHTML = `<img src="${p.file}" alt="Test-split MRI slice, true class ${L.LABELS[p.true]}" loading="lazy"><span>True: <b>${L.LABELS[p.true]}</b></span>`;
+        if (p.torch_pred !== p.true) {  // known error in the saved prediction file
+          b.classList.add("miss");
+          b.insertAdjacentHTML("beforeend", `<span class="badge miss-badge" title="The model predicts ${L.LABELS[p.torch_pred]} for this slice">misclassified</span>`);
+        }
         b.onclick = () => { const img = new Image(); img.onload = () => analyse(img, p.file.split("/").pop(), p); img.src = p.file; };
         box.appendChild(b);
       }
