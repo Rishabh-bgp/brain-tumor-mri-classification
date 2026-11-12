@@ -84,15 +84,15 @@ for k, col in enumerate(("deletion_auc", "insertion_auc")):
     ax[k].bar(range(len(order)), mu, yerr=sd, color=["#2bb3c0"] * 5 + ["#888"], capsize=3)
     ax[k].set_xticks(range(len(order)), [METHOD_LABELS[m] for m in order], rotation=35, ha="right", fontsize=8)
     ax[k].set_title(("Deletion AUC (lower is better)" if k == 0 else "Insertion AUC (higher is better)"))
-fig.savefig(FIG / "xai_faithfulness.png"); plt.close(fig)
+fig.savefig(FIG / "xai_faithfulness.png", bbox_inches="tight"); plt.close(fig)
 fig, ax = plt.subplots(figsize=(5.5, 3.6))
 for m in METHODS:
     s = san[san.method == m].groupby("stage", sort=False).spearman.mean()
     ax.plot(range(len(s)), s.values, "o-", label=METHOD_LABELS[m])
-ax.set_xticks(range(len(stages)), stages, rotation=30); ax.set_ylabel("Spearman vs. trained-model map")
+ax.set_xticks(range(len(stages)), stages, rotation=30, ha="right"); ax.set_ylabel("Spearman vs. trained-model map")
 ax.set_xlabel("Cumulative randomisation (top \u2192 bottom)"); ax.axhline(0, color="k", lw=0.6); ax.legend(fontsize=7)
 ax.set_title("Model-parameter randomisation test")
-fig.savefig(FIG / "xai_sanity_check.png"); plt.close(fig)
+fig.savefig(FIG / "xai_sanity_check.png", bbox_inches="tight"); plt.close(fig)
 fig, ax = plt.subplots(figsize=(4.8, 4))
 ax.imshow(agree, cmap="viridis", vmin=0, vmax=1)
 for a in range(len(METHODS)):
@@ -100,7 +100,7 @@ for a in range(len(METHODS)):
         ax.text(b, a, f"{agree[a, b]:.2f}", ha="center", va="center", fontsize=8, color="w" if agree[a, b] < 0.6 else "k")
 lab = [METHOD_LABELS[m].replace(" (superpixels)", "") for m in METHODS]
 ax.set_xticks(range(len(METHODS)), lab, rotation=35, ha="right", fontsize=8); ax.set_yticks(range(len(METHODS)), lab, fontsize=8)
-ax.set_title("Mean Spearman agreement between methods"); fig.savefig(FIG / "xai_agreement.png"); plt.close(fig)
+ax.set_title("Mean Spearman agreement between methods"); fig.savefig(FIG / "xai_agreement.png", bbox_inches="tight"); plt.close(fig)
 
 
 # 3) qualitative grids: per class two confident correct cases, plus misclassified cases

@@ -133,9 +133,23 @@ black baseline), **occlusion** (32-px patch, stride 16) and **KernelSHAP** on ~6
 Evaluated on 100 test images (25 per class) with **deletion/insertion AUC** (Petsiuk et al., 2018) against a random
 baseline, and on 12 images with the **cascading model-parameter randomisation test** (Adebayo et al., 2018).
 
-_XAI study in progress; results will appear here._
+| Method | Deletion AUC ↓ | Insertion AUC ↑ | Mass on head region | ρ after classifier randomised | ρ after full randomisation |
+|---|---|---|---|---|---|
+| Grad-CAM | 0.442 ± 0.359 | 0.828 ± 0.215 | 76.3% | 0.26 | -0.08 |
+| Grad-CAM++ | 0.454 ± 0.346 | 0.823 ± 0.217 | 81.8% | 0.91 | 0.05 |
+| Integrated Gradients | 0.260 ± 0.213 | 0.680 ± 0.259 | 97.7% | 0.94 | 0.84 |
+| Occlusion | 0.387 ± 0.385 | 0.790 ± 0.254 | 83.3% | 0.15 | 0.02 |
+| KernelSHAP (SLIC) | 0.419 ± 0.369 | 0.764 ± 0.276 | 73.4% | 0.17 | 0.17 |
+| Random baseline | 0.285 ± 0.106 | 0.424 ± 0.342 | 57.9% | — | — |
 
+**What the numbers say.**
+- **Insertion** separates the methods from the random baseline (0.424): Grad-CAM 0.828, Grad-CAM++ 0.823, occlusion 0.790, KernelSHAP 0.764, Integrated Gradients 0.680.
+- **Deletion** (black fill) does not: only Integrated Gradients (0.260) beats random (0.285). Scattered black pixels push slices out of distribution faster than deleting one compact region, so this metric favours pixel-scattered maps under a black baseline.
+- **Sanity check:** randomising only the classifier drops the rank correlation to 0.26 (Grad-CAM), 0.15 (occlusion) and 0.17 (KernelSHAP): these maps depend on what the model learned. Grad-CAM++ stays at 0.91 until deeper blocks are randomised, and **Integrated Gradients fails** (0.84 even after the whole network is re-initialised), so its good deletion score is not evidence of faithfulness.
+- **Agreement** between methods is moderate: Grad-CAM vs Grad-CAM++ 0.80, vs occlusion 0.43, vs Integrated Gradients 0.41, vs KernelSHAP 0.19.
+- In several confident errors (gliomas called *no tumour*) the maps sit on the ventricles or outside the brain rather than on the visible lesion.
 
+The demo therefore uses **Grad-CAM** (passes the sanity check, best insertion) by default, with **occlusion** as a model-agnostic cross-check.
 
 <table>
   <tr>
@@ -167,8 +181,8 @@ path = kagglehub.dataset_download("masoudnickparvar/brain-tumor-mri-dataset")
 
 print("Path to dataset files:", path)
 ```
-The eight demo samples in `docs/samples/` are resized Testing images that belong to no duplicate pair, redistributed
-under CC BY 4.0 with attribution.
+The eight demo samples in `docs/samples/` are resized Testing images (two per class, seeded) that belong to no strict or
+linked duplicate pair anywhere in the dataset, redistributed under CC BY 4.0 with attribution.
 
 ## 🧾 Review files (`results/review/`)
 

@@ -72,7 +72,7 @@
     const top = Object.keys(q).reduce((a, b) => (q[a] >= q[b] ? a : b));
     return { inside_foreground: inside, top_quadrant: top, top_quadrant_share: q[top] };
   }
-  const pct = v => (v > 0.999 ? ">99.9%" : v < 0.001 ? "<0.1%" : (100 * v).toFixed(1) + "%");
+  const pct = v => (v === 1 ? "100%" : v === 0 ? "0%" : v > 0.999 ? ">99.9%" : v < 0.001 ? "<0.1%" : (100 * v).toFixed(1) + "%");
   // Templated, factual rationale built only from model outputs and saved test statistics.
   function rationale(probs, stats, att, agreement) {
     const order = probs.map((p, i) => [p, i]).sort((a, b) => b[0] - a[0]);

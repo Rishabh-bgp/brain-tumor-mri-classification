@@ -163,8 +163,8 @@ path = kagglehub.dataset_download("masoudnickparvar/brain-tumor-mri-dataset")
 
 print("Path to dataset files:", path)
 ```
-The eight demo samples in `docs/samples/` are resized Testing images that belong to no duplicate pair, redistributed
-under CC BY 4.0 with attribution.
+The eight demo samples in `docs/samples/` are resized Testing images (two per class, seeded) that belong to no strict or
+linked duplicate pair anywhere in the dataset, redistributed under CC BY 4.0 with attribution.
 
 ## 🧾 Review files (`results/review/`)
 

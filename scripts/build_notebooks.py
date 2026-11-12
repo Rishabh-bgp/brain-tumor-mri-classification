@@ -160,6 +160,11 @@ display(pd.DataFrame(full["per_class"]).T.round(4))
 print("confusion matrix (rows = true, cols = predicted; glioma, meningioma, notumor, pituitary):")
 print(pd.DataFrame(full["confusion_matrix"], index=["glioma", "meningioma", "notumor", "pituitary"], columns=["glioma", "meningioma", "notumor", "pituitary"]))
 print("uncertain rate:", round(full["uncertain_rate"], 4), "| accuracy confident:", full["accuracy_confident"], "| accuracy uncertain:", full["accuracy_uncertain"])'''),
+    ("md", "### Leakage by class: Testing images with vs without a strict near-duplicate in the original Training folder"),
+    ("code", r'''lb = pd.DataFrame(m["leakage_by_class"]).T
+lb.index = pd.MultiIndex.from_tuples([tuple(i.split("|")) for i in lb.index], names=["model", "class", "subset"])
+display(lb.unstack(["model", "subset"]))
+subprocess.run([sys.executable, "scripts/audit_augmented.py"], check=True)  # files named *-aug-* (augmented meningiomas)'''),
     ("code", r'''from IPython.display import Image, display
 for f in ("confusion_matrix", "roc_curves", "reliability"):
     display(Image(f"results/figures/{f}.png", width=480))'''),
