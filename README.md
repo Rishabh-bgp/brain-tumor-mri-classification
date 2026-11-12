@@ -25,7 +25,7 @@ on the Kaggle [Brain Tumor MRI Dataset](https://www.kaggle.com/datasets/masoudni
 The project puts evaluation hygiene first: a perceptual-hash audit finds **near-duplicate images shared by the official
 Training and Testing folders**, the training data are de-leaked and split by duplicate group, an ImageNet-pretrained
 **EfficientNet-B0** is fine-tuned on a CPU, calibrated with temperature scaling, explained with **five XAI methods**
-that are sanity-checked and scored for faithfulness, and served as a static web app where the model runs **in your
+that are sanity-checked and scored with deletion/insertion metrics, and served as a static web app where the model runs **in your
 browser**.
 
 By **Rishabh Aryan**, M.Tech (Artificial Intelligence and Data Science), Department of Computer Science and Engineering,
@@ -62,14 +62,14 @@ from the saved metric files of each version ([`scripts/make_v1_v2.py`](scripts/m
 | Meningiomas with strict dup.: naive / leakage-aware | 105/105 / 74/105 | 105/105 / 55/105 |
 | Bootstrap resamples | 1,000 (200 for two subset rows) | 1,000 for every row |
 
-**Why v2 is better than v1, in plain language**
+**What changed in v2**
 - **Stricter duplicate rule.** A review found **19 Testing images** (18 no tumour, 1 glioma) whose copies, altered in
   contrast or sharpening, sat at pHash distance 8–10 and were still in our training/validation data. v2 also links pairs at
   Hamming ≤ 10 with thumbnail correlation ≥ 0.98: **+215 linked pairs** (71 across Training/Testing), and
   **1,223 Training images removed** instead of 1,198. The model was retrained with identical settings.
-- **Honest uncertainty everywhere.** Every row of the subset table now uses **1,000 bootstrap resamples** (v1 used 200 for two rows).
+- **Consistent confidence intervals.** Every row of the subset table now uses **1,000 bootstrap resamples** (v1 used 200 for two rows).
 - **Corrected claims and citations.** Glioma source (figshare only), the augmented-file conclusion (possible but not
-  demonstrated), the Roberts et al. and Deepak/Swati descriptions, the abstract's accuracy claim (now cited), consistent
+  demonstrated), the Roberts et al. and Deepak/Swati descriptions, a citation for the abstract's claim that reported accuracies are often above 94%, consistent
   rounding and reference style, and an uncited entry removed.
 - **Stricter demo presets.** Only test images with no candidate pair at all at Hamming ≤ 10 and no augmented files.
 - **Demo fixes.** Samples stay disabled until the model has loaded, non-images get a clear message, and in-browser
@@ -77,11 +77,7 @@ from the saved metric files of each version ([`scripts/make_v1_v2.py`](scripts/m
 - **Robustness check.** A looser rule (Hamming 7–10, correlation ≥ 0.95) would link 84 more Testing images to our
   training data; all 84 are predicted correctly, and without them accuracy is 91.4% (n = 1,516), close to the 91.9% on all 1,600.
 
-**Why some v2 scores are lower.** Accuracy goes from 93.4% to 91.9%. That is expected: v2 is the **more honest
-estimate**, because the hidden near-copies found by the review are no longer in training (no Testing image now has a training or validation partner with correlation ≥ 0.98 within Hamming 10). Not all of the drop is due to the rule, though:
-the training pool loses only 25 images (18 no tumour, 7 glioma, no meningioma) while the group-wise train/validation
-assignment is re-drawn, yet meningioma recall moves from 89.8% to 84.0%. Part of the change is therefore run-to-run
-variance of a single training seed, which the confidence intervals do not include.
+**Why some v2 scores are lower.** Accuracy goes from 93.4% to 91.9%. The 19 Testing images whose near-copies v2 removes are classified correctly by both versions, so the drop does not come from them: 79 predictions change between the versions (38 from correct to wrong, 14 the other way and 27 from one wrong class to another; almost all gliomas and meningiomas). The training pool loses only 25 images (18 no tumour, 7 glioma, no meningioma) and the group-wise train/validation assignment is redrawn, so the difference mainly reflects run-to-run training variance of a single seed, which our confidence intervals do not capture. v2 is preferred because its split is cleaner (no Testing image now has a training or validation partner with correlation ≥ 0.98 within Hamming distance 10), not because its accuracy is lower.
 
 ---
 
@@ -160,7 +156,7 @@ The dominant error is a tumour called *no tumour* (42 gliomas, 48 meningiomas): 
 precision is 81.6%. Validation accuracy inside the training distribution is 98.7%, well above test accuracy, which
 suggests a shift between the Training and Testing folders beyond the duplicates removed.
 
-**Naive vs leakage-aware.** An identical model trained on the original Training folder (random image-level validation split) scores **96.1%** on the same Testing folder, 4.3 points higher. Part of the gap may come from more training data (4,760 vs 3,709 training images; 1,190 vs 454 no-tumour), but the per-class split shows memorisation: on the 105 Testing meningiomas that have a strict near-duplicate in Training the naive model is correct on **105/105**, the leakage-aware model on 55/105, while on the 295 meningiomas without one the two are close (288 vs 281 correct). 50 of the 68-image gap comes from these 105 meningiomas, which suggests that much of the gap reflects memorisation of near-copies; part of it also reflects the leakage-aware model losing all training examples of that sub-population, so its leak-free accuracy is unknown.
+**Naive vs leakage-aware.** An identical model trained on the original Training folder (random image-level validation split) scores **96.1%** on the same Testing folder, 4.3 points higher. Part of the gap may come from more training data (4,760 vs 3,709 training images; 1,190 vs 454 no-tumour), but the per-class split points to memorisation: on the 105 Testing meningiomas that have a strict near-duplicate in Training the naive model is correct on **105/105**, the leakage-aware model on 55/105, while on the 295 meningiomas without one the two are close (288 vs 281 correct). 50 of the 68-image gap comes from these 105 meningiomas, which suggests that much of the gap reflects memorisation of near-copies; part of it also reflects the leakage-aware model losing all training examples of that sub-population, so its leak-free accuracy is unknown.
 
 | Model | Full Testing | Testing with a strict dup. in Training (n = 441) | Testing with no linked dup. (n = 970) |
 |---|---|---|---|
@@ -202,7 +198,7 @@ baseline, and on 12 images with the **cascading model-parameter randomisation te
 **What the numbers say.**
 - **Insertion** separates the methods from the random baseline (0.497): Grad-CAM 0.841, Grad-CAM++ 0.842, occlusion 0.803, KernelSHAP 0.749, Integrated Gradients 0.679.
 - **Deletion** (black fill) does not: no method beats random (0.283); Integrated Gradients (0.283) comes closest. Scattered black pixels push slices out of distribution faster than deleting one compact region, so this metric favours pixel-scattered maps under a black baseline.
-- **Sanity check:** randomising only the classifier drops the rank correlation to 0.11 (Grad-CAM), 0.14 (occlusion) and 0.24 (KernelSHAP): these maps depend on what the model learned. Grad-CAM++ stays at 0.94 until deeper blocks are randomised, and **Integrated Gradients fails** (0.84 even after the whole network is re-initialised), so its good deletion score is not evidence of faithfulness.
+- **Sanity check:** randomising only the classifier drops the rank correlation to 0.11 (Grad-CAM), 0.14 (occlusion) and 0.24 (KernelSHAP): these maps depend on what the model learned. Grad-CAM++ stays at 0.94 until deeper blocks are randomised, and **Integrated Gradients fails** (0.84 even after the whole network is re-initialised), so its deletion score, which only matches random, is not evidence that it reflects the model.
 - **Agreement** between methods is moderate: Grad-CAM vs Grad-CAM++ 0.84, vs occlusion 0.38, vs Integrated Gradients 0.51, vs KernelSHAP 0.22.
 - In the most confident errors (mostly gliomas called *no tumour*) Grad-CAM sometimes falls on the skull rim or away from the lesion and sometimes covers it while the prediction is still wrong: a plausible map does not make the decision correct.
 

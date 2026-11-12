@@ -78,8 +78,8 @@ f1, f2 = m1["clean"]["full_test"], m2["clean"]["full_test"]
 note = (f"<b>About this version (v2).</b> After a team review, v2 uses a stricter duplicate rule (+{d2['extra_pairs_v2_rule']} linked pairs; "
         f"{d2['train_imgs_removed_cross_split']:,} instead of {d1['train_imgs_removed_cross_split']:,} Training images removed) and a retrained model. "
         f"Test accuracy is {pc(f2['accuracy'])} (macro-F1 {r(f2['macro_f1'], 3)}, ROC-AUC {r(f2['roc_auc_macro_ovr'], 3)}) versus "
-        f"{pc(f1['accuracy'])} (macro-F1 {r(f1['macro_f1'], 3)}, ROC-AUC {r(f1['roc_auc_macro_ovr'], 3)}) in v1. The v2 score is lower because it is the more honest estimate "
-        f"(part of the difference is single-seed training variance); see the <a href=\"https://github.com/Rishabh-bgp/brain-tumor-mri-classification#-v2-vs-v1-results-side-by-side\">v1 vs v2 table</a>.")
+        f"{pc(f1['accuracy'])} (macro-F1 {r(f1['macro_f1'], 3)}, ROC-AUC {r(f1['roc_auc_macro_ovr'], 3)}) in v1. The difference mainly reflects run-to-run training variance of a single seed; "
+        f"v2 is preferred because its split is cleaner, not because its score is lower. See the <a href=\"https://github.com/Rishabh-bgp/brain-tumor-mri-classification#-v2-vs-v1-results-side-by-side\">v1 vs v2 table</a>.")
 ip = ROOT / "docs/index.html"
 html = ip.read_text()
 html = re.sub(r"<!--V1V2-->.*?<!--/V1V2-->", lambda _: f"<!--V1V2-->{note}<!--/V1V2-->", html, flags=re.S)

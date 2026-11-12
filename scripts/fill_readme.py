@@ -51,7 +51,7 @@ if N:
                 "NAIVE_TEXT": (f"An identical model trained on the original Training folder (random image-level validation split) scores "
                                f"**{pc(N['full_test']['accuracy'])}** on the same Testing folder, {abs(N['full_test']['accuracy'] - f['accuracy']) * 100:.1f} points higher. "
                                f"Part of the gap may come from more training data (4,760 vs {d['subset_counts']['train']:,} training images; 1,190 vs {d['subset_by_class']['train']['notumor']} no-tumour), "
-                               f"but the per-class split shows memorisation: on the {md['n']} Testing meningiomas that have a strict near-duplicate in Training "
+                               f"but the per-class split points to memorisation: on the {md['n']} Testing meningiomas that have a strict near-duplicate in Training "
                                f"the naive model is correct on **{md['correct']}/{md['n']}**, the leakage-aware model on {mc['correct']}/{mc['n']}, while on the "
                                f"{mnd['n']} meningiomas without one the two are close ({mnd['correct']} vs {mcnd['correct']} correct). "
                                f"{md['correct'] - mc['correct']} of the {round(abs(N['full_test']['accuracy'] - f['accuracy']) * 1600)}-image gap comes from these {md['n']} meningiomas, "

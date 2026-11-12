@@ -25,7 +25,7 @@ on the Kaggle [Brain Tumor MRI Dataset](https://www.kaggle.com/datasets/masoudni
 The project puts evaluation hygiene first: a perceptual-hash audit finds **near-duplicate images shared by the official
 Training and Testing folders**, the training data are de-leaked and split by duplicate group, an ImageNet-pretrained
 **EfficientNet-B0** is fine-tuned on a CPU, calibrated with temperature scaling, explained with **five XAI methods**
-that are sanity-checked and scored for faithfulness, and served as a static web app where the model runs **in your
+that are sanity-checked and scored with deletion/insertion metrics, and served as a static web app where the model runs **in your
 browser**.
 
 By **Rishabh Aryan**, M.Tech (Artificial Intelligence and Data Science), Department of Computer Science and Engineering,
@@ -41,14 +41,14 @@ from the saved metric files of each version ([`scripts/make_v1_v2.py`](scripts/m
 
 {V1V2_TABLE}
 
-**Why v2 is better than v1, in plain language**
+**What changed in v2**
 - **Stricter duplicate rule.** A review found **19 Testing images** (18 no tumour, 1 glioma) whose copies, altered in
   contrast or sharpening, sat at pHash distance 8–10 and were still in our training/validation data. v2 also links pairs at
   Hamming ≤ 10 with thumbnail correlation ≥ 0.98: **+{EXTRA_PAIRS} linked pairs** ({EXTRA_CROSS} across Training/Testing), and
   **{REMOVED} Training images removed** instead of 1,198. The model was retrained with identical settings.
-- **Honest uncertainty everywhere.** Every row of the subset table now uses **1,000 bootstrap resamples** (v1 used 200 for two rows).
+- **Consistent confidence intervals.** Every row of the subset table now uses **1,000 bootstrap resamples** (v1 used 200 for two rows).
 - **Corrected claims and citations.** Glioma source (figshare only), the augmented-file conclusion (possible but not
-  demonstrated), the Roberts et al. and Deepak/Swati descriptions, the abstract's accuracy claim (now cited), consistent
+  demonstrated), the Roberts et al. and Deepak/Swati descriptions, a citation for the abstract's claim that reported accuracies are often above 94%, consistent
   rounding and reference style, and an uncited entry removed.
 - **Stricter demo presets.** Only test images with no candidate pair at all at Hamming ≤ 10 and no augmented files.
 - **Demo fixes.** Samples stay disabled until the model has loaded, non-images get a clear message, and in-browser
@@ -56,11 +56,7 @@ from the saved metric files of each version ([`scripts/make_v1_v2.py`](scripts/m
 - **Robustness check.** A looser rule (Hamming 7–10, correlation ≥ 0.95) would link {SENS_TEST} more Testing images to our
   training data; all {SENS_TEST} are predicted correctly, and without them accuracy is {SENS_ACC} (n = {SENS_N}), close to the {ACC} on all 1,600.
 
-**Why some v2 scores are lower.** Accuracy goes from 93.4% to {ACC}. That is expected: v2 is the **more honest
-estimate**, because the hidden near-copies found by the review are no longer in training (no Testing image now has a training or validation partner with correlation ≥ 0.98 within Hamming 10). Not all of the drop is due to the rule, though:
-the training pool loses only 25 images (18 no tumour, 7 glioma, no meningioma) while the group-wise train/validation
-assignment is re-drawn, yet meningioma recall moves from 89.8% to {REC_ME}. Part of the change is therefore run-to-run
-variance of a single training seed, which the confidence intervals do not include.
+**Why some v2 scores are lower.** Accuracy goes from 93.4% to {ACC}. The 19 Testing images whose near-copies v2 removes are classified correctly by both versions, so the drop does not come from them: 79 predictions change between the versions (38 from correct to wrong, 14 the other way and 27 from one wrong class to another; almost all gliomas and meningiomas). The training pool loses only 25 images (18 no tumour, 7 glioma, no meningioma) and the group-wise train/validation assignment is redrawn, so the difference mainly reflects run-to-run training variance of a single seed, which our confidence intervals do not capture. v2 is preferred because its split is cleaner (no Testing image now has a training or validation partner with correlation ≥ 0.98 within Hamming distance 10), not because its accuracy is lower.
 
 ---
 
