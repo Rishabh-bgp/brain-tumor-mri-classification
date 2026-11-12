@@ -1,7 +1,7 @@
 {
-  "max_abs_logit_diff_torch_vs_onnx": 0.000354766845703125,
+  "max_abs_logit_diff_torch_vs_onnx": 0.00023651123046875,
   "argmax_agreement": 1.0,
-  "max_abs_cam_diff_torch_vs_onnx": 0.00157928466796875,
-  "max_abs_diff_onnx_cam_vs_autograd_gradcam_normalised": 7.2904549351937575e-06,
+  "max_abs_cam_diff_torch_vs_onnx": 0.00135040283203125,
+  "max_abs_diff_onnx_cam_vs_autograd_gradcam_normalised": 1.6017488297603855e-05,
   "onnx_size_mb": 16.027229
 }

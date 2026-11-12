@@ -159,8 +159,9 @@ def cascading_randomisation(model, xs, targets, methods, stages_to_use=None, see
         gm = GreyModel(rnd).eval()
         for m in methods:
             for i in range(len(xs)):
-                rows.append({"stage": stage, "method": m, "image": i,
-                             "spearman": rank_corr(ref[(m, i)], explain(gm, xs[i:i + 1], targets[i], m))})
+                e = explain(gm, xs[i:i + 1], targets[i], m)
+                rows.append({"stage": stage, "method": m, "image": i, "spearman": rank_corr(ref[(m, i)], e),
+                             "constant_map": bool(np.ptp(e) == 0 or np.ptp(ref[(m, i)]) == 0)})
     return rows
 
 
@@ -173,7 +174,9 @@ def blur(x: torch.Tensor, k: int = 31, sigma: float = 10.0) -> torch.Tensor:
 
 
 def deletion_insertion(gm, x, target, sal: np.ndarray, steps: int = 32) -> tuple[float, float]:
-    order = np.argsort(-sal.ravel(), kind="stable")
+    # ties (e.g. zeros after ReLU/clipping) are broken randomly with a fixed seed, not in raster order
+    jitter = np.random.default_rng(0).uniform(0, 1e-9, sal.size)
+    order = np.argsort(-(sal.ravel() + jitter), kind="stable")
     n = order.size
     blurred = blur(x)
     dels, ins = [], []

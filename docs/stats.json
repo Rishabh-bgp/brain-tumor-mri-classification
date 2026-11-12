@@ -1,10 +1,10 @@
 {
-  "temperature": 1.836449230211702,
-  "conf_threshold": 0.67,
+  "temperature": 1.9089141465158759,
+  "conf_threshold": 0.69,
   "threshold_rule": "smallest t in [0.50,0.99] (step 0.01) with val accuracy >= 0.99 on predictions with calibrated confidence >= t",
   "test_n": 1600,
-  "test_accuracy": 0.93375,
-  "test_macro_f1": 0.9332656025631204,
+  "test_accuracy": 0.91875,
+  "test_macro_f1": 0.9185037573113346,
   "classes": [
     "glioma",
     "meningioma",
@@ -19,48 +19,48 @@
   ],
   "per_class": {
     "glioma": {
-      "precision": 0.9970326409495549,
-      "recall": 0.84,
-      "f1": 0.9118046132971506,
+      "precision": 0.9683908045977011,
+      "recall": 0.8425,
+      "f1": 0.9010695187165776,
       "support": 400,
-      "auc": 0.973728125,
+      "auc": 0.9676364583333334,
       "missed_as": "notumor",
-      "missed_as_n": 39,
+      "missed_as_n": 42,
       "false_alarm_from": "meningioma",
-      "false_alarm_from_n": 1
+      "false_alarm_from_n": 8
     },
     "meningioma": {
-      "precision": 0.9373368146214099,
-      "recall": 0.8975,
-      "f1": 0.9169859514687101,
+      "precision": 0.9411764705882353,
+      "recall": 0.84,
+      "f1": 0.8877146631439894,
       "support": 400,
-      "auc": 0.9876375000000001,
+      "auc": 0.9830666666666666,
       "missed_as": "notumor",
-      "missed_as_n": 28,
+      "missed_as_n": 48,
       "false_alarm_from": "glioma",
-      "false_alarm_from_n": 23
+      "false_alarm_from_n": 21
     },
     "notumor": {
-      "precision": 0.8565310492505354,
-      "recall": 1.0,
-      "f1": 0.922722029988466,
-      "support": 400,
-      "auc": 0.996134375,
-      "missed_as": "glioma",
-      "missed_as_n": 0,
-      "false_alarm_from": "glioma",
-      "false_alarm_from_n": 39
-    },
-    "pituitary": {
-      "precision": 0.9661016949152542,
+      "precision": 0.8159509202453987,
       "recall": 0.9975,
-      "f1": 0.981549815498155,
+      "f1": 0.8976377952755905,
       "support": 400,
-      "auc": 0.9996895833333334,
-      "missed_as": "meningioma",
+      "auc": 0.9963885416666667,
+      "missed_as": "glioma",
       "missed_as_n": 1,
       "false_alarm_from": "meningioma",
-      "false_alarm_from_n": 12
+      "false_alarm_from_n": 48
+    },
+    "pituitary": {
+      "precision": 0.9802955665024631,
+      "recall": 0.995,
+      "f1": 0.9875930521091811,
+      "support": 400,
+      "auc": 0.9998104166666667,
+      "missed_as": "glioma",
+      "missed_as_n": 2,
+      "false_alarm_from": "meningioma",
+      "false_alarm_from_n": 8
     }
   }
 }

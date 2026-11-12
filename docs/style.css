@@ -76,3 +76,4 @@ h1 span{color:var(--teal)}
 @media (max-width:640px){.hero{grid-template-columns:1fr;padding-top:20px}.hero-motif{max-width:220px;margin:0 auto}
 .why{grid-template-columns:1fr}.bar{grid-template-columns:92px 1fr 52px}.workstation{padding:10px 12px}.hero{padding-left:14px;padding-right:14px}}
 .placeholder[hidden],.scanline[hidden]{display:none}
+.sample:disabled{opacity:.45;cursor:wait}

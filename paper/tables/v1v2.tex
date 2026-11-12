@@ -1,0 +1,26 @@
+\begin{tabular}{lll}
+\toprule
+Metric & v1 (a591cfa) & v2 \\
+\midrule
+Duplicate link rule & MD5, or Hamming $\le$ 6 \& $r$ $\ge$ 0.95 & v1, or Hamming $\le$ 10 \& $r$ $\ge$ 0.98 \\
+Linked pairs & 5,962 & 6,177 \\
+Training-folder images removed & 1,198 & 1,223 \\
+Train / validation images & 3,739 / 663 & 3,709 / 668 \\
+Test accuracy (95\% CI) & 93.4\% (92.1\%--94.5\%) & 91.9\% (90.5\%--93.2\%) \\
+Macro-F1 & 0.933 & 0.919 \\
+Macro ROC-AUC & 0.989 & 0.987 \\
+ECE raw $\to$ calibrated & 0.054 $\to$ 0.036 & 0.070 $\to$ 0.052 \\
+Temperature T / threshold $\tau$ & 1.84 / 0.67 & 1.91 / 0.69 \\
+Uncertain rate & 3.8\% & 3.5\% \\
+Accuracy confident / uncertain & 95.3\% / 44.3\% & 93.8\% / 39.3\% \\
+Recall glioma & 84.0\% & 84.3\% \\
+Recall meningioma & 89.8\% & 84.0\% \\
+Recall no tumour & 100.0\% & 99.8\% \\
+Recall pituitary & 99.8\% & 99.5\% \\
+One-per-group test accuracy & 93.1\% & 91.9\% \\
+Naive model accuracy (same test) & 96.1\% & 96.1\% \\
+Gap naive $-$ leakage-aware & 2.8 pts & 4.3 pts \\
+Meningiomas with strict dup.: naive / leakage-aware & 105/105 / 74/105 & 105/105 / 55/105 \\
+Bootstrap resamples & 1,000 (200 for two subset rows) & 1,000 for every row \\
+\bottomrule
+\end{tabular}

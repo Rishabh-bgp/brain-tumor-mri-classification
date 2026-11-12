@@ -9,7 +9,8 @@ m = json.loads((ROOT / "results/metrics.json").read_text())
 d = json.loads((ROOT / "results/review/dedup_summary.json").read_text())
 cal = m["calibration"]["clean"]
 C, N = m["clean"], m.get("naive")
-pc = lambda x: f"{100 * x:.1f}%"
+from decimal import ROUND_HALF_UP, Decimal  # noqa: E402
+pc = lambda x: str(Decimal(repr(100 * float(x))).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)) + "%"  # noqa: E731
 f = C["full_test"]
 LAB = {"glioma": "Glioma", "meningioma": "Meningioma", "notumor": "No tumour", "pituitary": "Pituitary"}
 rows = "\n".join(f"| {LAB[c]} | {v['precision']:.3f} | {v['recall']:.3f} | {v['f1']:.3f} | {f['roc_auc_per_class'][c]:.3f} |"
@@ -23,12 +24,19 @@ val = {
     "SD_NO": d["test_strict_dup_by_class"]["notumor"], "SD_ME": d["test_strict_dup_by_class"]["meningioma"],
     "SD_GL": d["test_strict_dup_by_class"]["glioma"], "SD_PI": d["test_strict_dup_by_class"]["pituitary"],
     "CONFLICT": d["imgs_in_label_conflict_groups"], "REMOVED": f"{d['train_imgs_removed_cross_split']:,}",
+    "EXTRA_PAIRS": f"{d.get('extra_pairs_v2_rule', 0):,}", "EXTRA_CROSS": f"{d.get('extra_cross_split_pairs_v2_rule', 0):,}",
+    "REMOVED_V1": "1,198",
+    "V1V2_TABLE": (ROOT / "results/v1_vs_v2.md").read_text().strip(),
+    "REC_ME": pc(f["per_class"]["meningioma"]["recall"]),
+    "SENS_TEST": str(m["sensitivity_looser_rule"]["extra_test_images_linked_to_train_val"]),
+    "SENS_ACC": pc(m["sensitivity_looser_rule"]["clean_acc_excluding_extra"]),
+    "SENS_N": f"{m['sensitivity_looser_rule']['n_excluding_extra']:,}",
     "EXCL_NO": d["subset_by_class"]["excluded"]["notumor"], "N_TRAIN": f"{d['subset_counts']['train']:,}", "N_VAL": d["subset_counts"]["val"],
     "ACC": pc(f["accuracy"]), "ACC_CI": f"{pc(f['accuracy_ci95'][0])}–{pc(f['accuracy_ci95'][1])}", "F1": f"{f['macro_f1']:.3f}",
     "AUC": f"{f['roc_auc_macro_ovr']:.3f}", "ECE_RAW": f"{f['ece_raw']:.3f}", "ECE_CAL": f"{f['ece_calibrated']:.3f}", "TEMP": f"{cal['temperature']:.2f}",
     "N_DEDUP": f"{C['dedup_test']['n']:,}", "ACC_DEDUP": pc(C["dedup_test"]["accuracy"]), "F1_DEDUP": f"{C['dedup_test']['macro_f1']:.3f}",
     "PERCLASS_ROWS": rows, "GLI_NO": f["confusion_matrix"][0][2], "MEN_NO": f["confusion_matrix"][1][2],
-    "PREC_NO": pc(f["per_class"]["notumor"]["precision"]), "VAL_ACC": pc(cal["val_accuracy"]),
+    "PREC_NO": pc(f["per_class"]["notumor"]["precision"]), "REC_NO": pc(f["per_class"]["notumor"]["recall"]), "VAL_ACC": pc(cal["val_accuracy"]),
     "N_DUP": C["test_with_strict_train_dup"]["n"], "N_NODUP": C["test_without_linked_train_dup"]["n"],
     "ACC_C_DUP": pc(C["test_with_strict_train_dup"]["accuracy"]), "ACC_C_NODUP": pc(C["test_without_linked_train_dup"]["accuracy"]),
     "THR": f"{cal['uncertainty']['conf_threshold']:.2f}", "VAL_COV": pc(cal["uncertainty"]["val_coverage"]),
@@ -45,8 +53,10 @@ if N:
                                f"Part of the gap may come from more training data (4,760 vs {d['subset_counts']['train']:,} training images; 1,190 vs {d['subset_by_class']['train']['notumor']} no-tumour), "
                                f"but the per-class split shows memorisation: on the {md['n']} Testing meningiomas that have a strict near-duplicate in Training "
                                f"the naive model is correct on **{md['correct']}/{md['n']}**, the leakage-aware model on {mc['correct']}/{mc['n']}, while on the "
-                               f"{mnd['n']} meningiomas without one the two are close ({mnd['correct']} vs {mcnd['correct']} correct). Headline accuracies on this "
-                               f"dataset that train on the original Training folder are therefore partly a measure of recall of near-copies.")})
+                               f"{mnd['n']} meningiomas without one the two are close ({mnd['correct']} vs {mcnd['correct']} correct). "
+                               f"{md['correct'] - mc['correct']} of the {round(abs(N['full_test']['accuracy'] - f['accuracy']) * 1600)}-image gap comes from these {md['n']} meningiomas, "
+                               f"which suggests that much of the gap reflects memorisation of near-copies; part of it also reflects the leakage-aware model losing "
+                               f"all training examples of that sub-population, so its leak-free accuracy is unknown.")})
 xai = ROOT / "results/xai/faithfulness_per_image.csv"
 if xai.exists():
     fa = pd.read_csv(xai); san = pd.read_csv(ROOT / "results/xai/sanity_cascading_randomisation.csv")

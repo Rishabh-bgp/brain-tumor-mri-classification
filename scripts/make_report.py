@@ -69,8 +69,16 @@ res = {"calibration": calib}
 for r, df in runs.items():
     res[r] = {"full_test": metrics(df),
               "dedup_test": metrics(df[df.test_dedup_rep]),
-              "test_with_strict_train_dup": metrics(df[df.test_has_train_dup_strict], boot=200),
-              "test_without_linked_train_dup": metrics(df[~df.test_has_train_dup], boot=200)}
+              "test_with_strict_train_dup": metrics(df[df.test_has_train_dup_strict]),
+              "test_without_linked_train_dup": metrics(df[~df.test_has_train_dup])}
+    sd = df[df.test_has_train_dup_strict]
+    present = sorted(set(sd.true))
+    res[r]["test_with_strict_train_dup"]["macro_f1_note"] = (
+        "macro_f1 averages over all four classes; pituitary has no images in this subset (support 0) but receives "
+        "predictions, so its F1 is counted as 0. macro_f1_present_classes averages only the classes present.")
+    res[r]["test_with_strict_train_dup"]["present_classes"] = present
+    res[r]["test_with_strict_train_dup"]["macro_f1_present_classes"] = float(
+        f1_score(sd.true, sd.pred, labels=present, average="macro", zero_division=0))
 (ROOT / "results/metrics.json").write_text(json.dumps(res, indent=2))
 
 clean = runs["clean"]
@@ -93,8 +101,12 @@ for k, c in enumerate(CLASSES):
 
 
 # ---------------- LaTeX tables ----------------
+from decimal import ROUND_HALF_UP, Decimal  # noqa: E402
+
+
 def f(x):
-    return f"{x:.3f}"
+    """Round half up to 3 decimals (e.g. 0.8975 -> 0.898), consistent with the percentages in the text."""
+    return str(Decimal(repr(float(x))).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP))
 
 
 lines = [r"\begin{tabular}{lcccc}", r"\toprule", r"Class & Precision & Recall & F1 & ROC-AUC \\", r"\midrule"]
@@ -191,3 +203,26 @@ lines = [r"\begin{tabular}{l" + "c" * (2 * len(runs)) + "}", r"\toprule",
          r"Class & " + hdr + " & " + hdr + r" \\", r"\midrule"] + rows + [r"\bottomrule", r"\end{tabular}"]
 (TAB / "leakage_by_class.tex").write_text("\n".join(lines))
 print(json.dumps(lb, indent=1))
+
+
+# ---------------- sensitivity: a looser link rule (Hamming 7-10 with correlation >= 0.95) ----------------
+cand = pd.read_csv(ROOT / "results/review/candidate_pairs_hamming_le10.csv.gz")
+grp = pd.read_csv(ROOT / "results/review/hashes_and_groups.csv").set_index("relpath")
+loose = cand[(cand.hamming >= 7) & (cand.hamming <= 10) & (cand["corr"] >= 0.95) & ~cand.linked]
+pool = set(grp.index[grp.subset.isin(["train", "val"])])
+extra = set()
+for a, b in zip(loose.path_i, loose.path_j):
+    if a.startswith("Testing") and b in pool:
+        extra.add(a)
+    if b.startswith("Testing") and a in pool:
+        extra.add(b)
+c = runs["clean"]
+keep = c[~c.relpath.isin(extra)]
+sens = {"rule": "extra links: Hamming 7-10 and thumbnail correlation >= 0.95 (not already linked)",
+        "extra_pairs": int(len(loose)), "extra_test_images_linked_to_train_val": len(extra),
+        "extra_by_class": {k: int(v) for k, v in pd.Series([grp.loc[e, "cls"] for e in extra]).value_counts().items()},
+        "clean_acc_full": float((c.true == c.pred).mean()), "clean_acc_excluding_extra": float((keep.true == keep.pred).mean()),
+        "n_excluding_extra": int(len(keep)), "clean_acc_on_extra": float((c[c.relpath.isin(extra)].true == c[c.relpath.isin(extra)].pred).mean()) if extra else None}
+res["sensitivity_looser_rule"] = sens
+(ROOT / "results/metrics.json").write_text(json.dumps(res, indent=2))
+print(json.dumps(sens, indent=1))

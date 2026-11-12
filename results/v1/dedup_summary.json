@@ -1,0 +1,68 @@
+{
+  "n_images": 7200,
+  "n_unique_md5": 7013,
+  "exact_duplicate_files": 340,
+  "exact_cross_split_pairs": 0,
+  "strict_pairs": 3484,
+  "strict_cross_split_pairs": 1270,
+  "linked_pairs": 5962,
+  "linked_cross_split_pairs": 2158,
+  "groups": 5215,
+  "groups_strict": 5924,
+  "test_imgs_with_train_dup_strict": 441,
+  "test_imgs_with_train_dup_linked": 620,
+  "train_imgs_removed_cross_split": 1198,
+  "imgs_in_label_conflict_groups": 13,
+  "label_conflict_pairs": 10,
+  "subset_counts": {
+    "train": 3739,
+    "test": 1600,
+    "excluded": 1198,
+    "val": 663
+  },
+  "subset_by_class": {
+    "train": {
+      "glioma": 1140,
+      "meningioma": 1081,
+      "notumor": 478,
+      "pituitary": 1040
+    },
+    "val": {
+      "glioma": 202,
+      "meningioma": 191,
+      "notumor": 86,
+      "pituitary": 184
+    },
+    "test": {
+      "glioma": 400,
+      "meningioma": 400,
+      "notumor": 400,
+      "pituitary": 400
+    },
+    "excluded": {
+      "glioma": 58,
+      "meningioma": 128,
+      "notumor": 836,
+      "pituitary": 176
+    }
+  },
+  "test_dedup_reps": 1347,
+  "test_strict_dup_by_class": {
+    "glioma": 9,
+    "meningioma": 105,
+    "notumor": 327,
+    "pituitary": 0
+  },
+  "test_linked_dup_by_class": {
+    "glioma": 43,
+    "meningioma": 120,
+    "notumor": 364,
+    "pituitary": 93
+  },
+  "rule": {
+    "hamming_max": 6,
+    "corr_min": 0.95,
+    "strict_hamming": 2,
+    "strict_corr": 0.98
+  }
+}

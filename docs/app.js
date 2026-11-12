@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const METHODS = [
     { id: "gradcam", name: "Grad-CAM", label: "Grad-CAM — where the model looked", live: true },
-    { id: "occlusion", name: "Occlusion", label: "Occlusion — where hiding a 32-px patch lowered the class score (logit) most", live: true },
+    { id: "occlusion", name: "Occlusion", label: "Occlusion — where hiding a 32-px patch (stride 16) lowered the class score (logit) most", live: true },
     { id: "gradcampp", name: "Grad-CAM++", label: "Grad-CAM++ — where the model looked (precomputed, sample slices only)" },
     { id: "integrated_gradients", name: "Integrated Gradients", label: "Integrated Gradients — pixel-level attribution (precomputed, sample slices only)" },
     { id: "kernel_shap", name: "KernelSHAP", label: "KernelSHAP — superpixel contributions (precomputed, sample slices only)" },
@@ -17,7 +17,7 @@
   function toGraySquare(img) {
     const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, s = Math.max(w, h);
     const c = document.createElement("canvas"); c.width = s; c.height = s;
-    const ctx = c.getContext("2d"); ctx.fillStyle = "#000"; ctx.fillRect(0, 0, s, s);
+    const ctx = c.getContext("2d", { willReadFrequently: true }); ctx.fillStyle = "#000"; ctx.fillRect(0, 0, s, s);
     ctx.drawImage(img, Math.floor((s - w) / 2), Math.floor((s - h) / 2));
     const d = ctx.getImageData(0, 0, s, s).data, g = new Float32Array(s * s);
     for (let i = 0; i < s * s; i++) g[i] = (d[4 * i] * 19595 + d[4 * i + 1] * 38470 + d[4 * i + 2] * 7471 + 0x8000) >> 16;
@@ -80,21 +80,29 @@
     const out = await session.run({ image: t });
     return { logits: out.logits.data, cam: out.cam.data };
   }
-  // occlusion on the class logit (same target as Captum's Occlusion in btmri.xai), 7x7 grid of 32-px black patches
+  // Occlusion on the class logit, same setting as Captum's Occlusion in btmri.xai: 32-px black window, stride 16
+  // (13 x 13 = 169 forward passes); each pixel gets the mean logit drop over the windows that cover it.
   async function occlusionMap(gray, k, base) {
-    const P = 32, G = S / P, map = new Float32Array(G * G), B = 7;
-    for (let s = 0; s < G * G; s += B) {
-      const n = Math.min(B, G * G - s), batch = new Float32Array(n * S * S);
+    const W = 32, ST = 16, G = (S - W) / ST + 1, B = 13, n2 = G * G;
+    const sum = new Float32Array(S * S), cnt = new Float32Array(S * S);
+    for (let s = 0; s < n2; s += B) {
+      const n = Math.min(B, n2 - s), batch = new Float32Array(n * S * S);
       for (let b = 0; b < n; b++) {
         batch.set(gray, b * S * S);
-        const gy = Math.floor((s + b) / G), gx = (s + b) % G;
-        for (let y = gy * P; y < (gy + 1) * P; y++) batch.fill(0, b * S * S + y * S + gx * P, b * S * S + y * S + (gx + 1) * P);
+        const gy = Math.floor((s + b) / G) * ST, gx = ((s + b) % G) * ST;
+        for (let y = gy; y < gy + W; y++) batch.fill(0, b * S * S + y * S + gx, b * S * S + y * S + gx + W);
       }
       const r = await run(batch, n);
-      for (let b = 0; b < n; b++) map[s + b] = Math.max(0, base - r.logits[4 * b + k]);
-      $("status").textContent = `Occlusion ${Math.min(s + n, G * G)}/${G * G}…`;
+      for (let b = 0; b < n; b++) {
+        const d = base - r.logits[4 * b + k];
+        const gy = Math.floor((s + b) / G) * ST, gx = ((s + b) % G) * ST;
+        for (let y = gy; y < gy + W; y++) for (let x = gx; x < gx + W; x++) { sum[y * S + x] += d; cnt[y * S + x] += 1; }
+      }
+      $("status").textContent = `Occlusion ${Math.min(s + n, n2)}/${n2}…`;
     }
-    return L.upsample(L.minmax(map), G, S); // bilinear, like the Grad-CAM display
+    const out = new Float32Array(S * S);
+    for (let i = 0; i < S * S; i++) out[i] = cnt[i] ? Math.max(0, sum[i] / cnt[i]) : 0;
+    return L.minmax(out);
   }
   function decode56(b64) {
     const bin = atob(b64), a = new Float32Array(bin.length);
@@ -103,7 +111,8 @@
   }
 
   async function analyse(img, name, preset) {
-    if (busy || !session) return; busy = true;
+    if (!session) { $("status").textContent = "Model still loading — please wait…"; return; }
+    if (busy) return; busy = true;
     $("placeholder").hidden = true; $("hud-file").textContent = name;
     document.querySelectorAll(".sample").forEach(el => el.classList.toggle("active", preset && el.dataset.file === preset.file));
     const gray = toGraySquare(img);
@@ -127,9 +136,9 @@
     $("heat-label").textContent = METHODS.find(x => x.id === m).label;
     if (!cur) return;
     if (m === "occlusion" && !cur.maps.occlusion) {
-      busy = true; $("scan").hidden = false;
+      busy = true; setMethodButtons(); $("scan").hidden = false;
       cur.maps.occlusion = await occlusionMap(cur.gray, cur.k, cur.logitK);
-      $("scan").hidden = true; $("status").textContent = "Occlusion done · on-device"; busy = false;
+      $("scan").hidden = true; $("status").textContent = "Occlusion done · on-device"; busy = false; setMethodButtons();
     }
     drawHeat(cur.maps[m]);
   }
@@ -138,7 +147,7 @@
     for (const m of METHODS) {
       const b = document.createElement("button"); b.type = "button"; b.textContent = m.name; b.setAttribute("role", "radio");
       b.setAttribute("aria-checked", String(m.id === method));
-      b.disabled = !m.live && !(cur && cur.preset);
+      b.disabled = busy || (!m.live && !(cur && cur.preset));
       b.title = b.disabled ? "Available for the sample slices (precomputed in Python)" : m.label;
       b.onclick = () => !busy && showMethod(m.id);
       box.appendChild(b);
@@ -163,7 +172,8 @@
 
   // ---------- wiring ----------
   function loadFile(f) {
-    if (!f || !f.type.startsWith("image/")) return;
+    if (!f) return;
+    if (!/^image\/(jpeg|png)$/.test(f.type)) { $("status").textContent = "Please choose a JPG or PNG image"; return; }
     const img = new Image(); img.onload = () => analyse(img, f.name, null); img.src = URL.createObjectURL(f);
   }
   const drop = $("drop");
@@ -182,6 +192,7 @@
       const box = $("samples");
       for (const p of presets) {
         const b = document.createElement("button"); b.className = "sample"; b.dataset.file = p.file; b.type = "button";
+        b.disabled = true; b.title = "Model still loading…";
         b.innerHTML = `<img src="${p.file}" alt="Test-split MRI slice, true class ${L.LABELS[p.true]}" loading="lazy"><span>True: <b>${L.LABELS[p.true]}</b></span>`;
         b.onclick = () => { const img = new Image(); img.onload = () => analyse(img, p.file.split("/").pop(), p); img.src = p.file; };
         box.appendChild(b);
@@ -189,6 +200,7 @@
       ort.env.wasm.numThreads = 1;
       session = await ort.InferenceSession.create("model/brain_tumor_effnetb0.onnx", { executionProviders: ["wasm"] });
       $("status").textContent = "Model ready · ONNX Runtime Web (WASM)";
+      document.querySelectorAll(".sample").forEach(el => { el.disabled = false; el.title = ""; });
     } catch (err) { $("status").textContent = "Failed to load: " + err.message; console.error(err); }
   })();
   window.__neuro = { analyse, toGraySquare, run, get cur() { return cur; } };

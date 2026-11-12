@@ -1,16 +1,16 @@
 {
   "clean": {
-    "temperature": 1.836449230211702,
-    "val_ece_raw": 0.01121438311143354,
-    "val_ece_calibrated": 0.0064790934169349,
+    "temperature": 1.9089141465158759,
+    "val_ece_raw": 0.01102967713134229,
+    "val_ece_calibrated": 0.00792585021716924,
     "uncertainty": {
-      "conf_threshold": 0.67,
+      "conf_threshold": 0.69,
       "target_val_accuracy": 0.99,
-      "val_retained_accuracy": 0.9908116385911179,
-      "val_coverage": 0.9849170437405732,
+      "val_retained_accuracy": 0.9908952959028832,
+      "val_coverage": 0.9865269461077845,
       "rule": "smallest t in [0.50,0.99] (step 0.01) with val accuracy >= 0.99 on predictions with calibrated confidence >= t"
     },
-    "val_accuracy": 0.9864253393665159
+    "val_accuracy": 0.9865269461077845
   },
   "naive": {
     "temperature": 1.7346503503040023,

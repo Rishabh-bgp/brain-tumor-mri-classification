@@ -76,8 +76,9 @@ plt.tight_layout(); plt.show()
 sizes = pd.Series([Image.open(p).size for p in recs.path[::10]]).value_counts().head(8)
 print("most common image sizes (every 10th image):\n", sizes)'''),
     ("md", "## Duplicate audit\nTwo images are **linked** when their MD5 matches, or when their 64-bit pHash Hamming distance "
-           "is ≤ 6 **and** the Pearson correlation of their 64×64 thumbnails is ≥ 0.95. A **strict** near-duplicate requires "
-           "distance ≤ 2 and correlation ≥ 0.98. Connected components of linked images are *groups*."),
+           "is ≤ 6 **and** the Pearson correlation of their 64×64 thumbnails is ≥ 0.95, **or** (added in v2 after review) when the "
+           "distance is ≤ 10 and the correlation ≥ 0.98, which catches contrast- or sharpening-altered copies. A **strict** "
+           "near-duplicate requires distance ≤ 2 and correlation ≥ 0.98. Connected components of linked images are *groups*."),
     ("code", r'''from btmri.splits import hash_table, candidate_pairs, make_splits
 df = hash_table(Path(path))
 pairs = candidate_pairs(df)
@@ -85,6 +86,8 @@ df = make_splits(df, pairs)
 print("exact duplicate files (MD5):", df.md5.duplicated(keep=False).sum(), "| unique MD5:", df.md5.nunique())
 print("strict near-duplicate pairs:", pairs.strict_dup.sum(), "of which cross-split:", (pairs.strict_dup & pairs.cross_split).sum())
 print("linked pairs:", pairs.linked.sum(), "of which cross-split:", (pairs.linked & pairs.cross_split).sum())
+print("extra pairs from the v2 clause (Hamming <= 10 and corr >= 0.98):", (pairs.linked & ~pairs.linked_v1).sum(),
+      "of which cross-split:", (pairs.linked & ~pairs.linked_v1 & pairs.cross_split).sum())
 te = df.split == "Testing"
 print("Testing images with a strict near-duplicate in Training:", df.test_has_train_dup_strict.sum(), "/", te.sum())
 print("Testing images with a linked image in Training:", df.test_has_train_dup.sum())
@@ -165,6 +168,11 @@ print("uncertain rate:", round(full["uncertain_rate"], 4), "| accuracy confident
 lb.index = pd.MultiIndex.from_tuples([tuple(i.split("|")) for i in lb.index], names=["model", "class", "subset"])
 display(lb.unstack(["model", "subset"]))
 subprocess.run([sys.executable, "scripts/audit_augmented.py"], check=True)  # files named *-aug-* (augmented meningiomas)'''),
+    ("md", "### Robustness check: a looser link rule (no retraining)\nHow many more Testing images would a rule that also links "
+           "Hamming 7–10 with correlation ≥ 0.95 tie to our train/validation images, and what is the accuracy without them?"),
+    ("code", r'''print(json.dumps(m["sensitivity_looser_rule"], indent=1))
+sd = m["clean"]["test_with_strict_train_dup"]
+print(sd["macro_f1_note"]); print("macro-F1 over present classes", sd["present_classes"], "=", round(sd["macro_f1_present_classes"], 4))'''),
     ("code", r'''from IPython.display import Image, display
 for f in ("confusion_matrix", "roc_curves", "reliability"):
     display(Image(f"results/figures/{f}.png", width=480))'''),

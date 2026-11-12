@@ -42,7 +42,9 @@ summary = {
     "test_dedup_reps": int(df.test_dedup_rep.sum()),
     "test_strict_dup_by_class": df[te].groupby("cls").test_has_train_dup_strict.sum().to_dict(),
     "test_linked_dup_by_class": df[te].groupby("cls").test_has_train_dup.sum().to_dict(),
-    "rule": {"hamming_max": 6, "corr_min": 0.95, "strict_hamming": 2, "strict_corr": 0.98},
+    "linked_pairs_v1_rule": int(pairs.linked_v1.sum()), "extra_pairs_v2_rule": int((pairs.linked & ~pairs.linked_v1).sum()),
+    "extra_cross_split_pairs_v2_rule": int((pairs.linked & ~pairs.linked_v1 & pairs.cross_split).sum()),
+    "rule": {"hamming_max": 6, "corr_min": 0.95, "or_hamming_max": 10, "or_corr_min": 0.98, "strict_hamming": 2, "strict_corr": 0.98},
 }
 summary = json.loads(json.dumps(summary, default=int))
 (out / "dedup_summary.json").write_text(json.dumps(summary, indent=2))

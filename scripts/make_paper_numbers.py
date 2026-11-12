@@ -13,7 +13,9 @@ out = {}
 
 
 def pc(x, nd=1):
-    return f"{100 * x:.{nd}f}\\%"
+    """Percent, rounded half up (consistent with the tables)."""
+    from decimal import ROUND_HALF_UP, Decimal
+    return str(Decimal(repr(100 * float(x))).quantize(Decimal(1).scaleb(-nd), rounding=ROUND_HALF_UP)) + "\\%"
 
 
 for run, tag in (("clean", "C"), ("naive", "N")):
@@ -74,7 +76,25 @@ for key, v in lbc.items():
     tag = ("C" if r == "clean" else "N") + c.capitalize() + ("Dup" if dup == "dup" else "NoDup")
     out["LB" + tag] = f"{v['correct']}/{v['n']}" if v["n"] else "--"
     out["LBAcc" + tag] = pc(v["accuracy"]) if v["accuracy"] is not None else "--"
+sv = m.get("sensitivity_looser_rule")
+if sv:
+    out["SensExtraPairs"] = f"{sv['extra_pairs']:,}"
+    out["SensExtraTest"] = str(sv["extra_test_images_linked_to_train_val"])
+    out["SensExtraNo"] = str(sv["extra_by_class"].get("notumor", 0))
+    out["SensAccExcl"] = pc(sv["clean_acc_excluding_extra"])
+    out["SensNExcl"] = f"{sv['n_excluding_extra']:,}"
+    out["SensAccOnExtra"] = pc(sv["clean_acc_on_extra"]) if sv["clean_acc_on_extra"] is not None else "--"
+for k in ("linked_pairs_v1_rule", "extra_pairs_v2_rule", "extra_cross_split_pairs_v2_rule"):
+    if k in d:
+        out["D" + "".join(w.capitalize() for w in k.split("_")).replace("1", "One").replace("2", "Two")] = f"{d[k]:,}"
+sdm = m["clean"]["test_with_strict_train_dup"]
+if "macro_f1_present_classes" in sdm:
+    out["DupFOnePresentC"] = f"{sdm['macro_f1_present_classes']:.3f}"
+    out["DupFOneAllC"] = f"{sdm['macro_f1']:.3f}"
 if "naive" in m:
+    lbc_ = m["leakage_by_class"]
+    out["MenGapImgs"] = str(lbc_["naive|meningioma|dup"]["correct"] - lbc_["clean|meningioma|dup"]["correct"])
+    out["MenDupN"] = str(lbc_["naive|meningioma|dup"]["n"])
     out["DiffFull"] = f"{abs(m['naive']['full_test']['accuracy'] - m['clean']['full_test']['accuracy']) * 100:.1f}"
     out["DiffImgs"] = str(round(abs(m['naive']['full_test']['accuracy'] - m['clean']['full_test']['accuracy']) * 1600))
 au = ROOT / "results/review/augmented_summary.json"
@@ -84,6 +104,11 @@ if au.exists():
                                                                        str(a["linked_any"]), str(a["linked_non_identity"]))
     out["AugAccC"], out["AugOtherAccC"] = pc(a["clean_acc_test_aug_meningioma"]), pc(a["clean_acc_test_other_meningioma"])
     out["AugAccN"], out["AugOtherAccN"] = pc(a["naive_acc_test_aug_meningioma"]), pc(a["naive_acc_test_other_meningioma"])
+    for run, t in (("clean", "C"), ("naive", "N")):
+        out[f"AugFair{t}"] = f"{a[run + '_nodup_aug_correct']}/{a[run + '_nodup_aug_n']}"
+        out[f"AugFairOther{t}"] = f"{a[run + '_nodup_other_correct']}/{a[run + '_nodup_other_n']}"
+        out[f"AugFairAcc{t}"] = pc(a[run + "_nodup_aug_correct"] / a[run + "_nodup_aug_n"])
+        out[f"AugFairOtherAcc{t}"] = pc(a[run + "_nodup_other_correct"] / a[run + "_nodup_other_n"])
 xai = ROOT / "results/xai"
 LAB = {"gradcam": "Grad-CAM", "gradcampp": "Grad-CAM++", "integrated_gradients": "Integrated Gradients",
        "occlusion": "Occlusion", "kernel_shap": "KernelSHAP (SLIC)", "random": "Random baseline"}
@@ -116,6 +141,12 @@ if (xai / "faithfulness_per_image.csv").exists():
     out["AgGcShap"] = f"{ag.loc['gradcam', 'kernel_shap']:.2f}"
     out["AgOccShap"] = f"{ag.loc['occlusion', 'kernel_shap']:.2f}"
     out["AgIGOcc"] = f"{ag.loc['integrated_gradients', 'occlusion']:.2f}"
+    fgs = [g.get_group(k).inside_foreground.mean() for k in ("gradcam", "gradcampp", "occlusion", "kernel_shap")]
+    out["FgMin"], out["FgMax"] = f"{100 * min(fgs):.0f}", f"{100 * max(fgs):.0f}"
+    if "constant_map" in san:
+        gc = san[san.method == "gradcam"]
+        out["SanConstGc"], out["SanRowsGc"] = str(int(gc.constant_map.sum())), str(len(gc))
+        out["SanConstAll"] = str(int(san.constant_map.sum()))
 import re
 DIG = dict(zip("0123456789", ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]))
 out = {re.sub(r"\d", lambda mm: DIG[mm.group()], k): v for k, v in out.items()}

@@ -60,5 +60,10 @@ for run in ("clean", "naive"):
     out[f"{run}_acc_test_aug_meningioma"] = float((men[aug].true == men[aug].pred).mean())
     out[f"{run}_acc_test_other_meningioma"] = float((men[~aug].true == men[~aug].pred).mean())
     out[f"{run}_n_aug"], out[f"{run}_n_other"] = int(aug.sum()), int((~aug).sum())
+    # fair comparison: only meningiomas WITHOUT a strict near-duplicate in Training
+    nd = men[~men.test_has_train_dup_strict]
+    a_nd = nd.relpath.str.contains("-aug-")
+    out[f"{run}_nodup_aug_correct"], out[f"{run}_nodup_aug_n"] = int((nd[a_nd].true == nd[a_nd].pred).sum()), int(a_nd.sum())
+    out[f"{run}_nodup_other_correct"], out[f"{run}_nodup_other_n"] = int((nd[~a_nd].true == nd[~a_nd].pred).sum()), int((~a_nd).sum())
 (ROOT / "results/review/augmented_summary.json").write_text(json.dumps(out, indent=2))
 print(json.dumps(out, indent=2))

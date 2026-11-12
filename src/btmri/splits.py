@@ -1,8 +1,10 @@
 """Leakage-aware split construction.
 
 1. Hash every image (MD5 + 64-bit pHash) and compute a 64x64 thumbnail Pearson correlation for candidate pairs.
-2. Link two images when the MD5 matches, or when pHash Hamming distance <= HAMMING_MAX and the thumbnail
-   correlation >= CORR_MIN (near-duplicate or near-identical neighbouring slice). Connected components = groups.
+2. Link two images when the MD5 matches, when pHash Hamming distance <= HAMMING_MAX and the thumbnail
+   correlation >= CORR_MIN (near-duplicate or near-identical neighbouring slice), or when Hamming distance <=
+   HAMMING_MAX_HICORR and correlation >= CORR_HI (contrast- or sharpening-altered copies that move the pHash).
+   Connected components = groups.
 3. Remove from the training pool every Training image whose group touches the Testing folder (cross-split leakage)
    and every image in a group carrying more than one class label.
 4. Split the remaining training pool into train/validation by group (stratified by class), so no group spans both.
@@ -19,6 +21,7 @@ from .dedup import UnionFind, file_md5, hamming_matrix, phash64
 
 HAMMING_MAX = 6
 CORR_MIN = 0.95
+HAMMING_MAX_HICORR, CORR_HI = 10, 0.98  # v2: added after review (altered copies at Hamming 8-10)
 STRICT_HAMMING, STRICT_CORR = 2, 0.98
 VAL_FRACTION = 0.15
 
@@ -48,7 +51,8 @@ def candidate_pairs(df: pd.DataFrame, max_hamming: int = 10) -> pd.DataFrame:
     for side in ("i", "j"):
         pairs[f"path_{side}"] = df.relpath.values[pairs[side]]
     pairs["strict_dup"] = pairs.md5_equal | ((pairs.hamming <= STRICT_HAMMING) & (pairs["corr"] >= STRICT_CORR))
-    pairs["linked"] = pairs.md5_equal | ((pairs.hamming <= HAMMING_MAX) & (pairs["corr"] >= CORR_MIN))
+    pairs["linked_v1"] = pairs.md5_equal | ((pairs.hamming <= HAMMING_MAX) & (pairs["corr"] >= CORR_MIN))
+    pairs["linked"] = pairs.linked_v1 | ((pairs.hamming <= HAMMING_MAX_HICORR) & (pairs["corr"] >= CORR_HI))
     pairs["cross_split"] = df.split.values[pairs.i] != df.split.values[pairs.j]
     pairs["label_conflict"] = df.cls.values[pairs.i] != df.cls.values[pairs.j]
     return pairs

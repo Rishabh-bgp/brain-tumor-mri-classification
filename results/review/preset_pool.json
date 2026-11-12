@@ -1,0 +1,19 @@
+{
+  "n": 75,
+  "by_class": {
+    "glioma": 50,
+    "meningioma": 12,
+    "pituitary": 9,
+    "notumor": 4
+  },
+  "presets": [
+    "Testing/glioma/Te-gl_391.jpg",
+    "Testing/glioma/Te-gl_73.jpg",
+    "Testing/meningioma/Te-me_248.jpg",
+    "Testing/meningioma/Te-me_215.jpg",
+    "Testing/notumor/Te-no_65.jpg",
+    "Testing/notumor/Te-no_9.jpg",
+    "Testing/pituitary/Te-pi_80.jpg",
+    "Testing/pituitary/Te-pi_96.jpg"
+  ]
+}

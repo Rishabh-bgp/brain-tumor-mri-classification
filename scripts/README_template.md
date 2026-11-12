@@ -33,6 +33,37 @@ Indian Institute of Information Technology Bhagalpur, Bihar, India.
 
 ---
 
+## 🆕 v2 vs v1 (results side by side)
+
+v1 is commit [`a591cfa`](https://github.com/Rishabh-bgp/brain-tumor-mri-classification/tree/v1.0) (tag `v1.0`); its metric
+files are kept unchanged in [`results/v1/`](results/v1/). v2 (tag `v2.0`) applies the team review. Every value below is read
+from the saved metric files of each version ([`scripts/make_v1_v2.py`](scripts/make_v1_v2.py)).
+
+{V1V2_TABLE}
+
+**Why v2 is better than v1, in plain language**
+- **Stricter duplicate rule.** A review found **19 Testing images** (18 no tumour, 1 glioma) whose copies, altered in
+  contrast or sharpening, sat at pHash distance 8–10 and were still in our training/validation data. v2 also links pairs at
+  Hamming ≤ 10 with thumbnail correlation ≥ 0.98: **+{EXTRA_PAIRS} linked pairs** ({EXTRA_CROSS} across Training/Testing), and
+  **{REMOVED} Training images removed** instead of 1,198. The model was retrained with identical settings.
+- **Honest uncertainty everywhere.** Every row of the subset table now uses **1,000 bootstrap resamples** (v1 used 200 for two rows).
+- **Corrected claims and citations.** Glioma source (figshare only), the augmented-file conclusion (possible but not
+  demonstrated), the Roberts et al. and Deepak/Swati descriptions, the abstract's accuracy claim (now cited), consistent
+  rounding and reference style, and an uncited entry removed.
+- **Stricter demo presets.** Only test images with no candidate pair at all at Hamming ≤ 10 and no augmented files.
+- **Demo fixes.** Samples stay disabled until the model has loaded, non-images get a clear message, and in-browser
+  occlusion now uses the evaluated setting (32-px patch, **stride 16**, 169 passes) instead of a stride-32 preview.
+- **Robustness check.** A looser rule (Hamming 7–10, correlation ≥ 0.95) would link {SENS_TEST} more Testing images to our
+  training data; all {SENS_TEST} are predicted correctly, and without them accuracy is {SENS_ACC} (n = {SENS_N}), close to the {ACC} on all 1,600.
+
+**Why some v2 scores are lower.** Accuracy goes from 93.4% to {ACC}. That is expected: v2 is the **more honest
+estimate**, because the hidden near-copies found by the review are no longer in training (no Testing image now has a training or validation partner with correlation ≥ 0.98 within Hamming 10). Not all of the drop is due to the rule, though:
+the training pool loses only 25 images (18 no tumour, 7 glioma, no meningioma) while the group-wise train/validation
+assignment is re-drawn, yet meningioma recall moves from 89.8% to {REC_ME}. Part of the change is therefore run-to-run
+variance of a single training seed, which the confidence intervals do not include.
+
+---
+
 ## 🧠 Live demo: NEURO//SCAN
 
 <p align="center"><img src="docs/screenshot.png" alt="NEURO//SCAN web app: MRI viewer with a Grad-CAM overlay, class probabilities and the Why this prediction panel" width="100%"></p>
@@ -41,7 +72,7 @@ A radiology-workstation-style page: drop an MRI slice (or click one of eight tes
 class), watch the scan line sweep while EfficientNet-B0 runs through ONNX Runtime Web (WebAssembly), and read:
 
 - **animated, calibrated class probabilities** for glioma, meningioma, pituitary and no tumour;
-- a **heat overlay with an opacity slider** and a method toggle: **Grad-CAM** (exact, computed from the ONNX feature map and classifier weights), **occlusion** (49 masked forward passes in the browser), and for the samples precomputed **Grad-CAM++, Integrated Gradients and KernelSHAP**;
+- a **heat overlay with an opacity slider** and a method toggle: **Grad-CAM** (exact, computed from the ONNX feature map and classifier weights), **occlusion** (32-px patch, stride 16: 169 masked forward passes in the browser, the same setting as the paper), and for the samples precomputed **Grad-CAM++, Integrated Gradients and KernelSHAP**;
 - a **"Why this prediction" panel** built from templates filled only with measured quantities: calibrated confidence, margin over the runner-up, an *uncertain — low confidence* flag, entropy, where the Grad-CAM mass falls, agreement between XAI methods (samples), and the class's real test precision/recall and most common confusion. It contains no medical reasoning.
 
 Images never leave your device. Mobile layout: [screenshot](docs/screenshot_mobile.png).
@@ -69,15 +100,20 @@ is true: none of the {DUP_FILES} byte-identical files ({UNIQ_MD5} unique MD5s am
 | Check | Result |
 |---|---|
 | Strict near-duplicate pairs (pHash Hamming ≤ 2 and 64×64 thumbnail correlation ≥ 0.98) | {STRICT_PAIRS} pairs, **{STRICT_CROSS} across Training/Testing** |
-| Linked pairs (MD5 equal, or Hamming ≤ 6 and correlation ≥ 0.95) | {LINKED_PAIRS} pairs, {LINKED_CROSS} across |
+| Linked pairs (MD5 equal, or Hamming ≤ 6 and correlation ≥ 0.95, or Hamming ≤ 10 and correlation ≥ 0.98) | {LINKED_PAIRS} pairs, {LINKED_CROSS} across |
 | Testing images with a strict near-duplicate in Training | **{TEST_STRICT} / 1,600 ({TEST_STRICT_PCT})**: no tumour {SD_NO}, meningioma {SD_ME}, glioma {SD_GL}, pituitary {SD_PI} |
-| Testing images linked to a Training image | {TEST_LINKED} / 1,600 ({TEST_LINKED_PCT}) |
-| Images in groups carrying two different labels | {CONFLICT} |
+| Testing images sharing a linked group with a Training image | {TEST_LINKED} / 1,600 ({TEST_LINKED_PCT}) |
+| Images in groups carrying two different labels | {CONFLICT} (the Testing folder itself has near-identical images with different labels, e.g. `Te-gl_68` / `Te-me_96` at Hamming 0, so a few test errors may be label noise) |
 
 **Leakage-aware split:** every Training image linked to a Testing image ({REMOVED}, of which {EXCL_NO} are no-tumour) and every
 label-conflict image is removed; the rest is split into **{N_TRAIN} train / {N_VAL} validation** images *by duplicate group*.
-The official 1,600 Testing images are kept intact, so no linked copy of any test image is seen in training.
-Thresholds were chosen by visual inspection; all hashes and candidate pairs are released for re-analysis.
+The official 1,600 Testing images are kept intact, and no image linked to them under this rule is seen in training.
+Thresholds were chosen by visual inspection. **v2 (after internal review):** the third clause (Hamming ≤ 10 with correlation
+≥ 0.98) catches contrast- or sharpening-altered copies at Hamming 8–10 that v1 missed; it adds {EXTRA_PAIRS} linked pairs
+({EXTRA_CROSS} across Training/Testing) and raises the number of removed Training images from {REMOVED_V1} to {REMOVED}; the leakage-aware model was retrained on the rebuilt split.
+pHash can still miss some near-copies. **Robustness check (no retraining):** a looser rule that also links Hamming 7–10 with
+correlation ≥ 0.95 would link {SENS_TEST} more Testing images to our train/validation images; without them, test accuracy is
+{SENS_ACC} (n = {SENS_N}) vs {ACC} on all 1,600. All hashes and candidate pairs are released for re-analysis.
 
 <p align="center"><img src="results/figures/dedup_examples.png" alt="Strict near-duplicates shared by the Training and Testing folders" width="100%"></p>
 
@@ -87,7 +123,7 @@ EfficientNet-B0 (ImageNet-pretrained, 4.0 M parameters), 224 px greyscale, 12 ep
 Every number below, the white paper's tables and the demo's statistics are generated by scripts from
 `results/predictions/clean_test_predictions.csv`.
 
-**Leakage-aware model, full Testing folder (n = 1,600):** accuracy **{ACC}** (95% bootstrap CI {ACC_CI}),
+**Leakage-aware model, full Testing folder (n = 1,600):** accuracy **{ACC}** (95% bootstrap CI {ACC_CI}; 1,000 image-level resamples, slightly optimistic because some test images are near-copies of each other),
 macro-F1 **{F1}**, macro one-vs-rest ROC-AUC **{AUC}**, ECE {ECE_RAW} → **{ECE_CAL}** after temperature scaling (T = {TEMP}).
 One image per duplicate group (n = {N_DEDUP}): accuracy {ACC_DEDUP}, macro-F1 {F1_DEDUP}.
 
@@ -95,7 +131,7 @@ One image per duplicate group (n = {N_DEDUP}): accuracy {ACC_DEDUP}, macro-F1 {F
 |---|---|---|---|---|
 {PERCLASS_ROWS}
 
-The dominant error is a tumour called *no tumour* ({GLI_NO} gliomas, {MEN_NO} meningiomas): no-tumour recall is perfect but its
+The dominant error is a tumour called *no tumour* ({GLI_NO} gliomas, {MEN_NO} meningiomas): no-tumour recall is {REC_NO} but its
 precision is {PREC_NO}. Validation accuracy inside the training distribution is {VAL_ACC}, well above test accuracy, which
 suggests a shift between the Training and Testing folders beyond the duplicates removed.
 
@@ -152,7 +188,7 @@ limitations, ethics and conclusion. All citations were checked against Crossref 
 ## 🗂️ Data
 
 [Brain Tumor MRI Dataset](https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset) by **Masoud Nickparvar**
-(Kaggle, version 2, **CC BY 4.0**), compiled from figshare (Cheng et al., 2015), SARTAJ and Br35H: 7,200 slices,
+(Kaggle, version 2, **CC BY 4.0**), compiled from figshare (Cheng et al., 2015), SARTAJ and Br35H (gliomas from figshare only; the SARTAJ gliomas were replaced in curation): 7,200 slices,
 Training 4 × 1,400, Testing 4 × 400. The dataset is **not** committed; it is downloaded at run time:
 
 ```python
@@ -163,8 +199,8 @@ path = kagglehub.dataset_download("masoudnickparvar/brain-tumor-mri-dataset")
 
 print("Path to dataset files:", path)
 ```
-The eight demo samples in `docs/samples/` are resized Testing images (two per class, seeded) that belong to no strict or
-linked duplicate pair anywhere in the dataset, redistributed under CC BY 4.0 with attribution.
+The eight demo samples in `docs/samples/` are resized Testing images, two per class, drawn with a fixed seed. Preset rule: only use test images with no candidate pair at all at Hamming ≤ 10, whatever the correlation; augmented (`*-aug-*`) files are also excluded.
+They are redistributed under CC BY 4.0 with attribution.
 
 ## 🧾 Review files (`results/review/`)
 
@@ -217,9 +253,9 @@ tests/       pytest (hashing, calibration, split integrity) and a Node test for 
 ```
 
 ## ⚠️ Limitations
-No patient identifiers (other slices of a patient may still cross the split) · duplicate thresholds set by inspection ·
+No patient identifiers (other slices of a patient may still cross the split) · duplicate thresholds set by inspection, and pHash can still miss some near-copies ·
 no-tumour images come from a different source collection (possible source shortcut) · single 2-D slice, four labels ·
-one training seed per configuration · no lesion masks, so explanations cannot be checked for localisation.
+one training seed per configuration · image-level bootstrap CIs (slightly optimistic) · one validation set used for checkpoint, temperature and threshold · no lesion masks, so explanations cannot be checked for localisation.
 
 ## 🔗 More projects
 - [Machine Learning Part 3](https://github.com/Rishabh-bgp/machine-learning-part-3): road damage detection with YOLO11 · [ROAD//SCAN](https://rishabh-bgp.github.io/machine-learning-part-3/)

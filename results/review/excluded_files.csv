@@ -1,6 +1,7 @@
 relpath,cls,label
 Training/glioma/Tr-gl_103.jpg,glioma,0
 Training/glioma/Tr-gl_104.jpg,glioma,0
+Training/glioma/Tr-gl_1049.jpg,glioma,0
 Training/glioma/Tr-gl_1056.jpg,glioma,0
 Training/glioma/Tr-gl_1057.jpg,glioma,0
 Training/glioma/Tr-gl_1066.jpg,glioma,0
@@ -32,9 +33,11 @@ Training/glioma/Tr-gl_356.jpg,glioma,0
 Training/glioma/Tr-gl_361.jpg,glioma,0
 Training/glioma/Tr-gl_372.jpg,glioma,0
 Training/glioma/Tr-gl_385.jpg,glioma,0
+Training/glioma/Tr-gl_387.jpg,glioma,0
 Training/glioma/Tr-gl_4.jpg,glioma,0
 Training/glioma/Tr-gl_420.jpg,glioma,0
 Training/glioma/Tr-gl_457.jpg,glioma,0
+Training/glioma/Tr-gl_471.jpg,glioma,0
 Training/glioma/Tr-gl_492.jpg,glioma,0
 Training/glioma/Tr-gl_497.jpg,glioma,0
 Training/glioma/Tr-gl_513.jpg,glioma,0
@@ -42,16 +45,20 @@ Training/glioma/Tr-gl_58.jpg,glioma,0
 Training/glioma/Tr-gl_607.jpg,glioma,0
 Training/glioma/Tr-gl_629.jpg,glioma,0
 Training/glioma/Tr-gl_639.jpg,glioma,0
+Training/glioma/Tr-gl_674.jpg,glioma,0
+Training/glioma/Tr-gl_700.jpg,glioma,0
 Training/glioma/Tr-gl_702.jpg,glioma,0
 Training/glioma/Tr-gl_707.jpg,glioma,0
 Training/glioma/Tr-gl_727.jpg,glioma,0
 Training/glioma/Tr-gl_75.jpg,glioma,0
 Training/glioma/Tr-gl_789.jpg,glioma,0
 Training/glioma/Tr-gl_79.jpg,glioma,0
+Training/glioma/Tr-gl_810.jpg,glioma,0
 Training/glioma/Tr-gl_822.jpg,glioma,0
 Training/glioma/Tr-gl_835.jpg,glioma,0
 Training/glioma/Tr-gl_843.jpg,glioma,0
 Training/glioma/Tr-gl_844.jpg,glioma,0
+Training/glioma/Tr-gl_857.jpg,glioma,0
 Training/glioma/Tr-gl_868.jpg,glioma,0
 Training/glioma/Tr-gl_879.jpg,glioma,0
 Training/glioma/Tr-gl_940.jpg,glioma,0
@@ -282,6 +289,7 @@ Training/notumor/Tr-no_1127.jpg,notumor,2
 Training/notumor/Tr-no_1128.jpg,notumor,2
 Training/notumor/Tr-no_113.jpg,notumor,2
 Training/notumor/Tr-no_1130.jpg,notumor,2
+Training/notumor/Tr-no_1131.jpg,notumor,2
 Training/notumor/Tr-no_1133.jpg,notumor,2
 Training/notumor/Tr-no_1134.jpg,notumor,2
 Training/notumor/Tr-no_1135.jpg,notumor,2
@@ -349,6 +357,7 @@ Training/notumor/Tr-no_1222.jpg,notumor,2
 Training/notumor/Tr-no_1223.jpg,notumor,2
 Training/notumor/Tr-no_1224.jpg,notumor,2
 Training/notumor/Tr-no_1225.jpg,notumor,2
+Training/notumor/Tr-no_1226.jpg,notumor,2
 Training/notumor/Tr-no_1228.jpg,notumor,2
 Training/notumor/Tr-no_1229.jpg,notumor,2
 Training/notumor/Tr-no_1230.jpg,notumor,2
@@ -466,6 +475,7 @@ Training/notumor/Tr-no_143.jpg,notumor,2
 Training/notumor/Tr-no_145.jpg,notumor,2
 Training/notumor/Tr-no_146.jpg,notumor,2
 Training/notumor/Tr-no_147.jpg,notumor,2
+Training/notumor/Tr-no_148.jpg,notumor,2
 Training/notumor/Tr-no_149.jpg,notumor,2
 Training/notumor/Tr-no_151.jpg,notumor,2
 Training/notumor/Tr-no_152.jpg,notumor,2
@@ -476,6 +486,7 @@ Training/notumor/Tr-no_158.jpg,notumor,2
 Training/notumor/Tr-no_159.jpg,notumor,2
 Training/notumor/Tr-no_16.jpg,notumor,2
 Training/notumor/Tr-no_160.jpg,notumor,2
+Training/notumor/Tr-no_163.jpg,notumor,2
 Training/notumor/Tr-no_164.jpg,notumor,2
 Training/notumor/Tr-no_167.jpg,notumor,2
 Training/notumor/Tr-no_169.jpg,notumor,2
@@ -495,6 +506,7 @@ Training/notumor/Tr-no_188.jpg,notumor,2
 Training/notumor/Tr-no_189.jpg,notumor,2
 Training/notumor/Tr-no_19.jpg,notumor,2
 Training/notumor/Tr-no_191.jpg,notumor,2
+Training/notumor/Tr-no_193.jpg,notumor,2
 Training/notumor/Tr-no_194.jpg,notumor,2
 Training/notumor/Tr-no_195.jpg,notumor,2
 Training/notumor/Tr-no_197.jpg,notumor,2
@@ -602,6 +614,7 @@ Training/notumor/Tr-no_35.jpg,notumor,2
 Training/notumor/Tr-no_350.jpg,notumor,2
 Training/notumor/Tr-no_351.jpg,notumor,2
 Training/notumor/Tr-no_352.jpg,notumor,2
+Training/notumor/Tr-no_353.jpg,notumor,2
 Training/notumor/Tr-no_354.jpg,notumor,2
 Training/notumor/Tr-no_355.jpg,notumor,2
 Training/notumor/Tr-no_357.jpg,notumor,2
@@ -611,6 +624,7 @@ Training/notumor/Tr-no_360.jpg,notumor,2
 Training/notumor/Tr-no_362.jpg,notumor,2
 Training/notumor/Tr-no_364.jpg,notumor,2
 Training/notumor/Tr-no_365.jpg,notumor,2
+Training/notumor/Tr-no_366.jpg,notumor,2
 Training/notumor/Tr-no_367.jpg,notumor,2
 Training/notumor/Tr-no_368.jpg,notumor,2
 Training/notumor/Tr-no_369.jpg,notumor,2
@@ -665,6 +679,7 @@ Training/notumor/Tr-no_447.jpg,notumor,2
 Training/notumor/Tr-no_449.jpg,notumor,2
 Training/notumor/Tr-no_45.jpg,notumor,2
 Training/notumor/Tr-no_450.jpg,notumor,2
+Training/notumor/Tr-no_456.jpg,notumor,2
 Training/notumor/Tr-no_458.jpg,notumor,2
 Training/notumor/Tr-no_46.jpg,notumor,2
 Training/notumor/Tr-no_460.jpg,notumor,2
@@ -676,9 +691,11 @@ Training/notumor/Tr-no_470.jpg,notumor,2
 Training/notumor/Tr-no_473.jpg,notumor,2
 Training/notumor/Tr-no_475.jpg,notumor,2
 Training/notumor/Tr-no_476.jpg,notumor,2
+Training/notumor/Tr-no_477.jpg,notumor,2
 Training/notumor/Tr-no_479.jpg,notumor,2
 Training/notumor/Tr-no_480.jpg,notumor,2
 Training/notumor/Tr-no_484.jpg,notumor,2
+Training/notumor/Tr-no_485.jpg,notumor,2
 Training/notumor/Tr-no_488.jpg,notumor,2
 Training/notumor/Tr-no_489.jpg,notumor,2
 Training/notumor/Tr-no_49.jpg,notumor,2
@@ -749,10 +766,12 @@ Training/notumor/Tr-no_587.jpg,notumor,2
 Training/notumor/Tr-no_589.jpg,notumor,2
 Training/notumor/Tr-no_592.jpg,notumor,2
 Training/notumor/Tr-no_595.jpg,notumor,2
+Training/notumor/Tr-no_596.jpg,notumor,2
 Training/notumor/Tr-no_597.jpg,notumor,2
 Training/notumor/Tr-no_598.jpg,notumor,2
 Training/notumor/Tr-no_60.jpg,notumor,2
 Training/notumor/Tr-no_600.jpg,notumor,2
+Training/notumor/Tr-no_601.jpg,notumor,2
 Training/notumor/Tr-no_603.jpg,notumor,2
 Training/notumor/Tr-no_604.jpg,notumor,2
 Training/notumor/Tr-no_605.jpg,notumor,2
@@ -822,6 +841,7 @@ Training/notumor/Tr-no_70.jpg,notumor,2
 Training/notumor/Tr-no_701.jpg,notumor,2
 Training/notumor/Tr-no_703.jpg,notumor,2
 Training/notumor/Tr-no_704.jpg,notumor,2
+Training/notumor/Tr-no_707.jpg,notumor,2
 Training/notumor/Tr-no_709.jpg,notumor,2
 Training/notumor/Tr-no_71.jpg,notumor,2
 Training/notumor/Tr-no_710.jpg,notumor,2
@@ -938,6 +958,8 @@ Training/notumor/Tr-no_855.jpg,notumor,2
 Training/notumor/Tr-no_856.jpg,notumor,2
 Training/notumor/Tr-no_858.jpg,notumor,2
 Training/notumor/Tr-no_859.jpg,notumor,2
+Training/notumor/Tr-no_86.jpg,notumor,2
+Training/notumor/Tr-no_862.jpg,notumor,2
 Training/notumor/Tr-no_864.jpg,notumor,2
 Training/notumor/Tr-no_867.jpg,notumor,2
 Training/notumor/Tr-no_868.jpg,notumor,2
@@ -985,6 +1007,7 @@ Training/notumor/Tr-no_936.jpg,notumor,2
 Training/notumor/Tr-no_937.jpg,notumor,2
 Training/notumor/Tr-no_938.jpg,notumor,2
 Training/notumor/Tr-no_939.jpg,notumor,2
+Training/notumor/Tr-no_942.jpg,notumor,2
 Training/notumor/Tr-no_943.jpg,notumor,2
 Training/notumor/Tr-no_947.jpg,notumor,2
 Training/notumor/Tr-no_948.jpg,notumor,2
@@ -1011,10 +1034,12 @@ Training/notumor/Tr-no_975.jpg,notumor,2
 Training/notumor/Tr-no_976.jpg,notumor,2
 Training/notumor/Tr-no_979.jpg,notumor,2
 Training/notumor/Tr-no_981.jpg,notumor,2
+Training/notumor/Tr-no_983.jpg,notumor,2
 Training/notumor/Tr-no_984.jpg,notumor,2
 Training/notumor/Tr-no_985.jpg,notumor,2
 Training/notumor/Tr-no_986.jpg,notumor,2
 Training/notumor/Tr-no_987.jpg,notumor,2
+Training/notumor/Tr-no_988.jpg,notumor,2
 Training/notumor/Tr-no_99.jpg,notumor,2
 Training/notumor/Tr-no_991.jpg,notumor,2
 Training/notumor/Tr-no_992.jpg,notumor,2

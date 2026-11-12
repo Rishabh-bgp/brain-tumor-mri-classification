@@ -3,12 +3,20 @@
   "n_aug_testing": 103,
   "linked_any": 26,
   "linked_non_identity": 10,
-  "clean_acc_test_aug_meningioma": 0.9902912621359223,
-  "clean_acc_test_other_meningioma": 0.8653198653198653,
+  "clean_acc_test_aug_meningioma": 0.9805825242718447,
+  "clean_acc_test_other_meningioma": 0.7912457912457912,
   "clean_n_aug": 103,
   "clean_n_other": 297,
+  "clean_nodup_aug_correct": 100,
+  "clean_nodup_aug_n": 102,
+  "clean_nodup_other_correct": 181,
+  "clean_nodup_other_n": 193,
   "naive_acc_test_aug_meningioma": 0.970873786407767,
   "naive_acc_test_other_meningioma": 0.9865319865319865,
   "naive_n_aug": 103,
-  "naive_n_other": 297
+  "naive_n_other": 297,
+  "naive_nodup_aug_correct": 99,
+  "naive_nodup_aug_n": 102,
+  "naive_nodup_other_correct": 189,
+  "naive_nodup_other_n": 193
 }

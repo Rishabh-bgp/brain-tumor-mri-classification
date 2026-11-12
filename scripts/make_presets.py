@@ -1,5 +1,8 @@
-"""Build the web demo's preset gallery: two Testing images per class that belong to NO duplicate pair at all
-(their linked group has size 1 across the whole dataset), with precomputed multi-method explanations.
+"""Build the web demo's preset gallery with precomputed multi-method explanations.
+
+Preset rule (stated identically in the paper, Section 7, and the README): Testing images that are not augmented
+files (*-aug-*) and have no candidate pair at all at pHash Hamming distance <= 10 with any other image in the
+dataset, whatever the thumbnail correlation; two per class, drawn with a fixed seed.
 
 Dataset licence: CC BY 4.0 (Masoud Nickparvar, Kaggle), which permits redistribution with attribution."""
 import base64
@@ -22,10 +25,10 @@ from btmri.xai import METHODS, GreyModel, attention_summary, explain, rank_corr 
 
 seed_everything(42)
 groups = pd.read_csv(ROOT / "results/review/hashes_and_groups.csv")
-size = groups.group.map(groups.group.value_counts())
 pairs = pd.read_csv(ROOT / "results/review/candidate_pairs_hamming_le10.csv.gz")
-in_any_pair = set(pairs[pairs.linked | pairs.strict_dup].path_i) | set(pairs[pairs.linked | pairs.strict_dup].path_j)
-solo = set(groups.relpath[(size == 1) & (groups.split == "Testing")]) - in_any_pair
+in_any_pair = set(pairs.path_i) | set(pairs.path_j)  # every candidate pair at Hamming <= 10, any correlation
+test = groups[(groups.split == "Testing") & ~groups.relpath.str.contains("-aug-")]
+solo = set(test.relpath) - in_any_pair
 pred = pd.read_csv(ROOT / "results/predictions/clean_test_predictions.csv")
 pool = pred[pred.relpath.isin(solo)]
 model = build_model(pretrained=False)
@@ -57,4 +60,6 @@ for c in CLASSES:
                         "attention": {m: attention_summary(maps[m], x[0, 0].numpy()) for m in METHODS}})
         print(r.relpath, r.true, "->", r.pred, round(r.confidence, 3), flush=True)
 (DOC / "presets.json").write_text(json.dumps(presets))
-print("pool size (Testing images in no duplicate pair):", len(pool), pool.true.value_counts().to_dict())
+print("pool size (non-augmented Testing images with no candidate pair at Hamming <= 10):", len(pool), pool.true.value_counts().to_dict())
+(ROOT / "results/review/preset_pool.json").write_text(json.dumps({"n": int(len(pool)), "by_class": {k: int(v) for k, v in pool.true.value_counts().items()},
+    "presets": [p["source"] for p in presets]}, indent=2))

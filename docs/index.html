@@ -70,7 +70,7 @@
 
   <section class="panel samples-panel">
     <div class="panel-head"><span class="dot"></span><h2>Sample slices from the test split</h2></div>
-    <p class="small">Two per class, chosen at random (seeded) from test images that belong to no duplicate pair anywhere in the dataset. The true label is shown so you can compare. Click one to run it. These also include precomputed Grad-CAM++, Integrated Gradients and KernelSHAP maps.</p>
+    <p class="small">Two per class, drawn with a fixed seed. Preset rule: only use test images with no candidate pair at all at Hamming ≤ 10, whatever the correlation; augmented (*-aug-*) files are also excluded. The true label is shown so you can compare. Click one to run it. These also include precomputed Grad-CAM++, Integrated Gradients and KernelSHAP maps.</p>
     <div id="samples" class="samples"></div>
     <p class="credit">Sample images: <a href="https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset">Brain Tumor MRI Dataset</a> by Masoud Nickparvar (Kaggle, CC BY 4.0), itself compiled from figshare, SARTAJ and Br35H. Resized and recompressed for this demo.</p>
   </section>
@@ -78,7 +78,8 @@
 
 <footer class="foot">
   <p><b>Not a medical device.</b> This model was trained on one public, curated Kaggle dataset of 2-D slices without patient identifiers. It has not been clinically validated, can be confidently wrong, and does not detect other pathologies. Outputs are for learning about machine learning only.</p>
-  <p>Model: EfficientNet-B0 (ImageNet-pretrained, timm), exported to ONNX and run with ONNX Runtime Web. Grad-CAM is computed exactly in the browser from the final feature map and classifier weights; occlusion runs 49 masked forward passes. © 2026 Rishabh Aryan · MIT License</p>
+  <p class="version"><!--V1V2--><b>About this version (v2).</b> After a team review, v2 uses a stricter duplicate rule (+215 linked pairs; 1,223 instead of 1,198 Training images removed) and a retrained model. Test accuracy is 91.9% (macro-F1 0.919, ROC-AUC 0.987) versus 93.4% (macro-F1 0.933, ROC-AUC 0.989) in v1. The v2 score is lower because it is the more honest estimate (part of the difference is single-seed training variance); see the <a href="https://github.com/Rishabh-bgp/brain-tumor-mri-classification#-v2-vs-v1-results-side-by-side">v1 vs v2 table</a>.<!--/V1V2--></p>
+  <p>Model: EfficientNet-B0 (ImageNet-pretrained, timm), exported to ONNX and run with ONNX Runtime Web. Grad-CAM is computed exactly in the browser from the final feature map and classifier weights; occlusion runs 169 masked forward passes (32-px window, stride 16, as in the paper). © 2026 Rishabh Aryan · MIT License</p>
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
 <script src="logic.js"></script>
