@@ -195,7 +195,7 @@ path = kagglehub.dataset_download("masoudnickparvar/brain-tumor-mri-dataset")
 
 print("Path to dataset files:", path)
 ```
-The eight demo samples in `docs/samples/` are resized Testing images, two per class, drawn with a fixed seed. Preset rule: only use test images with no candidate pair at all at Hamming ≤ 10, whatever the correlation; augmented (`*-aug-*`) files are also excluded.
+The eight demo samples in `docs/samples/` are unmodified Testing files (original resolution, byte-identical), two per class, drawn with a fixed seed. Preset rule: only use test images with no candidate pair at all at Hamming ≤ 10, whatever the correlation; augmented (`*-aug-*`) files are also excluded. One preset, `Te-gl_391`, is the only misclassified one: a glioma that the model predicts as no tumour (flagged uncertain). `python scripts/check_samples.py` checks that the shipped ONNX model reproduces the prediction file on every sample (probabilities within 0.01, same uncertain flag).
 They are redistributed under CC BY 4.0 with attribution.
 
 ## 🧾 Review files (`results/review/`)

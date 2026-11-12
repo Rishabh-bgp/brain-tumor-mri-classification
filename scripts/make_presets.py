@@ -6,6 +6,7 @@ dataset, whatever the thumbnail correlation; two per class, drawn with a fixed s
 
 Dataset licence: CC BY 4.0 (Masoud Nickparvar, Kaggle), which permits redistribution with attribution."""
 import base64
+import shutil
 import json
 import sys
 from pathlib import Path
@@ -14,7 +15,6 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
-from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -46,9 +46,9 @@ for c in CLASSES:
         tgt = CLASSES.index(r.pred)
         maps = {m: explain(gm, x, tgt, m) for m in METHODS}
         name = Path(r.relpath).stem + ".jpg"
-        im = Image.open(root / r.relpath).convert("L")
-        im.thumbnail((256, 256))
-        im.save(DOC / "samples" / name, quality=80, optimize=True)
+        # ship the original file byte-for-byte (no resize or recompression), so the browser sees exactly the
+        # image the prediction file was computed from (checked by scripts/check_samples.py)
+        shutil.copyfile(root / r.relpath, DOC / "samples" / name)
         enc = {}
         for m, s in maps.items():
             small = F.adaptive_avg_pool2d(torch.tensor(s)[None, None], 56)[0, 0].numpy()

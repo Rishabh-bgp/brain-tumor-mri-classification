@@ -70,9 +70,9 @@
 
   <section class="panel samples-panel">
     <div class="panel-head"><span class="dot"></span><h2>Sample slices from the test split</h2></div>
-    <p class="small">Two per class, drawn with a fixed seed. Preset rule: only use test images with no candidate pair at all at Hamming ≤ 10, whatever the correlation; augmented (*-aug-*) files are also excluded. The true label is shown so you can compare. Click one to run it. These also include precomputed Grad-CAM++, Integrated Gradients and KernelSHAP maps.</p>
+    <p class="small">Two per class, drawn with a fixed seed. Preset rule: only use test images with no candidate pair at all at Hamming ≤ 10, whatever the correlation; augmented (*-aug-*) files are also excluded. One preset, Te-gl_391, is the only misclassified one: a glioma that the model predicts as no tumour (flagged uncertain). The true label is shown so you can compare. Click one to run it. These also include precomputed Grad-CAM++, Integrated Gradients and KernelSHAP maps.</p>
     <div id="samples" class="samples"></div>
-    <p class="credit">Sample images: <a href="https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset">Brain Tumor MRI Dataset</a> by Masoud Nickparvar (Kaggle, CC BY 4.0), itself compiled from figshare, SARTAJ and Br35H. Resized and recompressed for this demo.</p>
+    <p class="credit">Sample images: <a href="https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset">Brain Tumor MRI Dataset</a> by Masoud Nickparvar (Kaggle, CC BY 4.0), itself compiled from figshare, SARTAJ and Br35H. Shipped unchanged (original files at their original resolution).</p>
   </section>
 </main>
 

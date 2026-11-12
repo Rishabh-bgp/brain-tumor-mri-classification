@@ -83,7 +83,7 @@
   // Occlusion on the class logit, same setting as Captum's Occlusion in btmri.xai: 32-px black window, stride 16
   // (13 x 13 = 169 forward passes); each pixel gets the mean logit drop over the windows that cover it.
   async function occlusionMap(gray, k, base) {
-    const W = 32, ST = 16, G = (S - W) / ST + 1, B = 13, n2 = G * G;
+    const W = 32, ST = 16, G = (S - W) / ST + 1, B = 4, n2 = G * G; // small batches keep each blocking step short
     const sum = new Float32Array(S * S), cnt = new Float32Array(S * S);
     for (let s = 0; s < n2; s += B) {
       const n = Math.min(B, n2 - s), batch = new Float32Array(n * S * S);
@@ -99,6 +99,7 @@
         for (let y = gy; y < gy + W; y++) for (let x = gx; x < gx + W; x++) { sum[y * S + x] += d; cnt[y * S + x] += 1; }
       }
       $("status").textContent = `Occlusion ${Math.min(s + n, n2)}/${n2}…`;
+      await new Promise(r => setTimeout(r, 0)); // yield so the page repaints and stays responsive between batches
     }
     const out = new Float32Array(S * S);
     for (let i = 0; i < S * S; i++) out[i] = cnt[i] ? Math.max(0, sum[i] / cnt[i]) : 0;
