@@ -1,0 +1,20 @@
+// Node test for docs/logic.js: node tests/test_logic.js
+const assert = require("assert");
+const L = require("../docs/logic.js");
+const p = L.softmax([2, 1, 0, -1], 1);
+assert(Math.abs(p.reduce((a, b) => a + b, 0) - 1) < 1e-9);
+assert(p[0] > p[1] && p[1] > p[2]);
+const pT = L.softmax([2, 1, 0, -1], 2);
+assert(pT[0] < p[0], "higher temperature must soften");
+assert(Math.abs(L.normEntropy([0.25, 0.25, 0.25, 0.25]) - 1) < 1e-9);
+assert(L.normEntropy([1, 0, 0, 0]) === 0);
+const up = L.upsample(new Float32Array([0, 1, 0, 1]), 2, 4);
+assert(up.length === 16 && up[0] === 0 && up[3] === 1);
+const stats = { temperature: 1.2, conf_threshold: 0.8, test_n: 1600, per_class: {} };
+for (const c of L.CLASSES) stats.per_class[c] = { precision: 0.9, recall: 0.9, missed_as: "meningioma", missed_as_n: 3, false_alarm_from: "glioma", false_alarm_from_n: 2 };
+const r = L.rationale([0.5, 0.3, 0.1, 0.1], stats, null, null);
+assert(r.uncertain === true && r.cls === "glioma" && r.runnerUp === "meningioma");
+assert(r.lines.some(l => l.v.includes("Uncertain: low confidence")));
+const r2 = L.rationale([0.02, 0.02, 0.95, 0.01], stats, null, null);
+assert(r2.uncertain === false && r2.cls === "notumor");
+console.log("logic.js tests passed");

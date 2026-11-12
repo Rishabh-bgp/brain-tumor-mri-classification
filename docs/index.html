@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEURO//SCAN: brain tumour MRI classifier with explainable AI (research demo)</title>
+<meta name="description" content="EfficientNet-B0 brain tumour MRI classifier (glioma, meningioma, pituitary, no tumour) running in your browser with Grad-CAM and occlusion explanations. Research and education demo, not a medical device.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-grid" aria-hidden="true"></div>
+<header class="hero">
+  <svg class="hero-motif" viewBox="0 0 400 300" aria-hidden="true">
+    <defs><radialGradient id="rg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#2dd4bf" stop-opacity=".35"/><stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/></radialGradient></defs>
+    <circle cx="200" cy="150" r="140" fill="url(#rg)"/>
+    <g fill="none" stroke="#5eead4" stroke-opacity=".55" stroke-width="1.4">
+      <ellipse cx="200" cy="150" rx="118" ry="132"/>
+      <ellipse cx="200" cy="150" rx="104" ry="118" stroke-opacity=".3"/>
+      <path d="M200 30 C 185 70, 215 100, 200 150 C 185 200, 215 230, 200 270" stroke-opacity=".5"/>
+      <path d="M120 90 q 25 -20 45 5 q 15 20 -5 35 q -20 15 5 35 q 20 15 0 35"/>
+      <path d="M280 90 q -25 -20 -45 5 q -15 20 5 35 q 20 15 -5 35 q -20 15 0 35"/>
+      <path d="M110 150 q 20 10 35 -5 M290 150 q -20 10 -35 -5 M125 200 q 20 -10 40 5 M275 200 q -20 -10 -40 5" stroke-opacity=".4"/>
+      <ellipse cx="200" cy="215" rx="22" ry="12" stroke-opacity=".35"/>
+    </g>
+    <line class="motif-scan" x1="70" x2="330" y1="150" y2="150" stroke="#22d3ee" stroke-width="2" stroke-opacity=".8"/>
+  </svg>
+  <div class="hero-text">
+    <p class="kicker">Explainable neuro-imaging AI · runs in your browser</p>
+    <h1>NEURO<span>//</span>SCAN</h1>
+    <p class="lede">An EfficientNet-B0 model classifies a 2-D brain MRI slice as <b>glioma</b>, <b>meningioma</b>, <b>pituitary tumour</b> or <b>no tumour</b>, then shows where it looked and why it decided, using only its own outputs. Images never leave your device.</p>
+    <p class="disclaimer-banner" role="note"><b>Research and education demo, not a medical device.</b> Do not use it for diagnosis or treatment decisions. Always consult a qualified radiologist or physician.</p>
+    <div class="hero-links">
+      <a href="https://github.com/Rishabh-bgp/brain-tumor-mri-classification">Code on GitHub</a>
+      <a href="https://github.com/Rishabh-bgp/brain-tumor-mri-classification/blob/main/paper/brain_tumor_mri_white_paper.pdf">White paper (PDF)</a>
+    </div>
+  </div>
+</header>
+
+<main class="workstation">
+  <section class="panel viewer-panel">
+    <div class="panel-head"><span class="dot"></span><h2>MRI viewer</h2><span id="status" class="status">Loading model…</span></div>
+    <div id="drop" class="viewer" tabindex="0" aria-label="Drop an MRI slice here or click to choose a file">
+      <canvas id="slice" width="448" height="448"></canvas>
+      <canvas id="heat" width="448" height="448"></canvas>
+      <div id="scan" class="scanline" hidden></div>
+      <div class="viewer-hud tl">AX · 2D · T1/T2/FLAIR</div>
+      <div id="hud-file" class="viewer-hud tr">no slice</div>
+      <div id="placeholder" class="placeholder">
+        <div class="ph-icon">⬆</div>
+        <p><b>Drop an MRI slice</b> or click to upload<br><small>JPG / PNG · processed locally</small></p>
+      </div>
+      <input id="file" type="file" accept="image/*" hidden>
+    </div>
+    <div class="controls">
+      <div class="method-toggle" role="radiogroup" aria-label="Explanation method" id="methods"></div>
+      <label class="slider">Overlay opacity <input id="opacity" type="range" min="0" max="100" value="55"><span id="opv">55%</span></label>
+    </div>
+    <p id="heat-label" class="heat-label">Grad-CAM — where the model looked</p>
+    <div class="legend"><span>low</span><i></i><span>high attribution</span></div>
+  </section>
+
+  <section class="panel result-panel">
+    <div class="panel-head"><span class="dot"></span><h2>Classification</h2></div>
+    <div id="verdict" class="verdict muted">Awaiting a slice…</div>
+    <p class="not-dx">Research demo — not for diagnosis</p>
+    <div id="bars" class="bars"></div>
+    <div class="panel-head sub"><span class="dot"></span><h3>Why this prediction</h3></div>
+    <dl id="why" class="why"><dt>—</dt><dd>The rationale appears after a prediction. It is generated from the model's own probabilities, its Grad-CAM map and its measured test-set performance; it contains no medical reasoning.</dd></dl>
+  </section>
+
+  <section class="panel samples-panel">
+    <div class="panel-head"><span class="dot"></span><h2>Sample slices from the test split</h2></div>
+    <p class="small">Two per class, chosen at random (seeded) from test images with no near-duplicate in the training folder. The true label is shown so you can compare. Click one to run it. These also include precomputed Grad-CAM++, Integrated Gradients and KernelSHAP maps.</p>
+    <div id="samples" class="samples"></div>
+    <p class="credit">Sample images: <a href="https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset">Brain Tumor MRI Dataset</a> by Masoud Nickparvar (Kaggle, CC BY 4.0), itself compiled from figshare, SARTAJ and Br35H. Resized and recompressed for this demo.</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <p><b>Not a medical device.</b> This model was trained on one public, curated Kaggle dataset of 2-D slices without patient identifiers. It has not been clinically validated, can be confidently wrong, and does not detect other pathologies. Outputs are for learning about machine learning only.</p>
+  <p>Model: EfficientNet-B0 (ImageNet-pretrained, timm), exported to ONNX and run with ONNX Runtime Web. Grad-CAM is computed exactly in the browser from the final feature map and classifier weights; occlusion runs 49 masked forward passes. © 2026 Rishabh Aryan · MIT License</p>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+<script src="logic.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

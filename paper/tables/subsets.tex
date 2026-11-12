@@ -1,0 +1,15 @@
+\begin{tabular}{llcccc}
+\toprule
+Model & Test subset & $n$ & Accuracy [95\% CI] & Macro-F1 [95\% CI] & ECE \\
+\midrule
+Leakage-aware & Full Testing & 1600 & 0.934 [0.921, 0.945] & 0.933 [0.921, 0.944] & 0.036 \\
+Leakage-aware & Testing, one per group & 1347 & 0.931 [0.918, 0.945] & 0.926 [0.912, 0.940] & 0.038 \\
+Leakage-aware & Has strict dup.\ in Training & 441 & 0.925 [0.900, 0.952] & -- (class-skewed subset) & 0.044 \\
+Leakage-aware & No linked dup.\ in Training & 980 & 0.927 [0.908, 0.943] & -- (class-skewed subset) & 0.043 \\
+\midrule
+Naive & Full Testing & 1600 & 0.961 [0.951, 0.970] & 0.961 [0.950, 0.970] & 0.022 \\
+Naive & Testing, one per group & 1347 & 0.959 [0.948, 0.970] & 0.959 [0.947, 0.970] & 0.023 \\
+Naive & Has strict dup.\ in Training & 441 & 0.995 [0.989, 1.000] & -- (class-skewed subset) & 0.005 \\
+Naive & No linked dup.\ in Training & 980 & 0.941 [0.926, 0.953] & -- (class-skewed subset) & 0.035 \\
+\bottomrule
+\end{tabular}
