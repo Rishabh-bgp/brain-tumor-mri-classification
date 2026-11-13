@@ -1,0 +1,12 @@
+{
+  "batch4": 11.00859999999404,
+  "batch10": 10.88629999999702,
+  "batch50": 11.79729999999702,
+  "forward_passes": 200,
+  "url": "http://localhost:8765/",
+  "browser": "headless Chrome",
+  "wasm_threads": 1,
+  "cpu": "x86_64",
+  "cpu_count": 8,
+  "note": "model forward passes only; SLIC superpixels and the ridge fit would add to this"
+}

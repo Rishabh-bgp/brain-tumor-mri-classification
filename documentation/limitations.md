@@ -43,14 +43,16 @@ These are the specific known weaknesses of this study and demo. Each one limits 
     with its original map after all weights are randomised, and Grad-CAM++ stays at 0.94 after
     the classifier is randomised.
 12. **Small XAI sample and no ground truth.** 100 images for faithfulness, 12 for the sanity check, and no tumour
-    masks, so localisation accuracy was not measured. LIME was not run.
+    masks, so localisation accuracy was not measured. The data (label) randomisation test was not run because it needs
+    retraining. KernelSHAP and LIME maps change with the random seed (mean Spearman between seeds
+    0.42 and 0.70).
 
 ## Web demo
 13. **Image recompression (fixed in v2.0.2).** Until v2.0.2 the preset images were resized and re-encoded, which changed the
     displayed result of `Te-gl_391`. Since v2.0.2 the presets are the original files, byte-for-byte, and an automated check
     confirms they reproduce the saved predictions within 0.01. Uploaded images are still decoded and resized by the browser's
     canvas, which can differ slightly from PIL; in our test of 12 uploads the largest probability difference to PyTorch was 0.0011.
-14. **Precomputed maps for presets only.** Grad-CAM++, Integrated Gradients and KernelSHAP are shown only for the eight presets;
-    uploads get Grad-CAM and occlusion.
+14. **Precomputed maps for presets only.** Grad-CAM++, Integrated Gradients, KernelSHAP and LIME are shown only for the eight
+    presets; uploads get Grad-CAM and occlusion. LIME would take more than ~10 s in the browser ([web demo](web_demo.md)).
 15. **Any image gets an answer.** The model has no out-of-distribution detector; a non-MRI image still receives one of the four
     classes, possibly with high confidence.

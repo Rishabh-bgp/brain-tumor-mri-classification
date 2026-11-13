@@ -111,16 +111,28 @@ if au.exists():
         out[f"AugFairOtherAcc{t}"] = pc(a[run + "_nodup_other_correct"] / a[run + "_nodup_other_n"])
 xai = ROOT / "results/xai"
 LAB = {"gradcam": "Grad-CAM", "gradcampp": "Grad-CAM++", "integrated_gradients": "Integrated Gradients",
-       "occlusion": "Occlusion", "kernel_shap": "KernelSHAP (SLIC)", "random": "Random baseline"}
+       "occlusion": "Occlusion", "kernel_shap": "KernelSHAP (SLIC)", "lime": "LIME (SLIC)", "random": "Random baseline"}
 if (xai / "faithfulness_per_image.csv").exists():
     fa = pd.read_csv(xai / "faithfulness_per_image.csv")
     san = pd.read_csv(xai / "sanity_cascading_randomisation.csv")
     ag = pd.read_csv(xai / "method_agreement_spearman.csv", index_col=0)
+    if (xai / "lime_faithfulness_per_image.csv").exists():  # LIME (v2.1.1, scripts/run_lime.py): separate files
+        fa = pd.concat([fa, pd.read_csv(xai / "lime_faithfulness_per_image.csv")[fa.columns]], ignore_index=True)
+        san = pd.concat([san, pd.read_csv(xai / "lime_sanity_cascading_randomisation.csv")], ignore_index=True)
+        agl = pd.read_csv(xai / "method_agreement_spearman_with_lime.csv", index_col=0)
+        ls = json.loads((xai / "lime_summary.json").read_text())
+        out["AgGcLime"] = f"{agl.loc['gradcam', 'lime']:.2f}"
+        out["AgLimeShap"] = f"{agl.loc['lime', 'kernel_shap']:.2f}"
+        out["AgLimeOcc"] = f"{agl.loc['lime', 'occlusion']:.2f}"
+        out["StabLime"] = f"{ls['seed_stability_mean_spearman']['lime']:.2f}"
+        out["StabShap"] = f"{ls['seed_stability_mean_spearman']['kernel_shap']:.2f}"
+        for k, v in ls["target_class_sensitivity_mean_spearman"].items():
+            out["Cls" + "".join(w.capitalize() for w in k.split("_")).replace("Gradcampp", "GradcamPP")] = f"{v:.2f}"
     g = fa.groupby("method")
     lines = [r"\begin{tabular}{lccccc}", r"\toprule",
              r"Method & Deletion AUC $\downarrow$ & Insertion AUC $\uparrow$ & Mass on head region & $\rho$ after classifier rand. & $\rho$ after full rand. \\",
              r"\midrule"]
-    for k in ["gradcam", "gradcampp", "integrated_gradients", "occlusion", "kernel_shap", "random"]:
+    for k in ["gradcam", "gradcampp", "integrated_gradients", "occlusion", "kernel_shap"] + (["lime"] if "lime" in g.groups else []) + ["random"]:
         r = g.get_group(k)
         s1 = san[(san.method == k) & (san.stage == "classifier")].spearman.mean() if k in set(san.method) else float("nan")
         s2 = san[(san.method == k) & (san.stage == "conv_stem")].spearman.mean() if k in set(san.method) else float("nan")
@@ -141,9 +153,10 @@ if (xai / "faithfulness_per_image.csv").exists():
     out["AgGcShap"] = f"{ag.loc['gradcam', 'kernel_shap']:.2f}"
     out["AgOccShap"] = f"{ag.loc['occlusion', 'kernel_shap']:.2f}"
     out["AgIGOcc"] = f"{ag.loc['integrated_gradients', 'occlusion']:.2f}"
-    fgs = [g.get_group(k).inside_foreground.mean() for k in ("gradcam", "gradcampp", "occlusion", "kernel_shap")]
+    fgs = [g.get_group(k).inside_foreground.mean() for k in ("gradcam", "gradcampp", "occlusion", "kernel_shap", "lime") if k in g.groups]
     out["FgMin"], out["FgMax"] = f"{100 * min(fgs):.0f}", f"{100 * max(fgs):.0f}"
     if "constant_map" in san:
+        san_const = san.copy()
         gc = san[san.method == "gradcam"]
         out["SanConstGc"], out["SanRowsGc"] = str(int(gc.constant_map.sum())), str(len(gc))
         out["SanConstAll"] = str(int(san.constant_map.sum()))

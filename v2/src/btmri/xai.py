@@ -18,7 +18,7 @@ from .model import MEAN, STD
 
 METHODS = ["gradcam", "gradcampp", "integrated_gradients", "occlusion", "kernel_shap"]
 METHOD_LABELS = {"gradcam": "Grad-CAM", "gradcampp": "Grad-CAM++", "integrated_gradients": "Integrated Gradients",
-                 "occlusion": "Occlusion", "kernel_shap": "KernelSHAP (superpixels)", "random": "Random"}
+                 "occlusion": "Occlusion", "kernel_shap": "KernelSHAP (superpixels)", "lime": "LIME (superpixels)", "random": "Random"}
 
 
 class GreyModel(nn.Module):
@@ -93,6 +93,30 @@ def kernel_shap(gm, x, target, n_samples=200, seed=0):
     return _norm(np.clip(attr[0, 0].numpy(), 0, None))
 
 
+def lime(gm, x, target, n_samples=200, seed=0, kernel_width=0.25):
+    """LIME (Ribeiro et al., 2016) on the same SLIC superpixels and black baseline as kernel_shap.
+
+    As in the reference `lime` image explainer: each perturbation switches a random subset of superpixels off
+    (Captum's default: each kept with probability 0.5), samples are weighted by an exponential kernel on the cosine
+    distance between the binary superpixel vector and the all-on vector (kernel width 0.25), and a weighted ridge
+    regression (alpha = 1) is fitted to the class logit. Positive coefficients are kept, as for KernelSHAP."""
+    from captum._utils.models.linear_model import SkLearnRidge
+    from captum.attr import Lime
+
+    def similarity(original_inp, perturbed_inp, perturbed_interpretable_inp, **kwargs):
+        z = perturbed_interpretable_inp.float().flatten()
+        cos = z.sum() / (z.norm() * z.numel() ** 0.5 + 1e-12)  # cosine with the all-ones vector
+        d = 1.0 - cos
+        return torch.exp(-(d ** 2) / kernel_width ** 2)
+
+    seg = torch.from_numpy(superpixels(x)).long()[None, None]
+    torch.manual_seed(seed)
+    with torch.no_grad():
+        attr = Lime(gm, interpretable_model=SkLearnRidge(alpha=1.0), similarity_func=similarity).attribute(
+            x, target=target, baselines=0.0, feature_mask=seg, n_samples=n_samples, perturbations_per_eval=50)
+    return _norm(np.clip(attr[0, 0].numpy(), 0, None))
+
+
 def explain(gm, x, target, method):
     gm.eval()
     if method == "gradcam":
@@ -105,6 +129,8 @@ def explain(gm, x, target, method):
         return occlusion(gm, x, target)
     if method == "kernel_shap":
         return kernel_shap(gm, x, target)
+    if method == "lime":
+        return lime(gm, x, target)
     if method == "random":
         return np.random.default_rng(int(x.sum().item() * 1000) % 2**32).random((224, 224))
     raise ValueError(method)

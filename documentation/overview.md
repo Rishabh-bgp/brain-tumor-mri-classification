@@ -16,7 +16,7 @@ on the Kaggle *Brain Tumor MRI Dataset* (version 2) and puts evaluation hygiene 
 3. **Model.** An ImageNet-pretrained EfficientNet-B0 fine-tuned on a CPU ([details](model_and_training.md)).
 4. **Calibration and uncertainty.** Temperature scaling and a validation-chosen confidence threshold
    ([details](evaluation_and_calibration.md)).
-5. **Explainability.** Five attribution methods with a randomisation sanity check and deletion/insertion metrics
+5. **Explainability.** Six attribution methods (including KernelSHAP and LIME on the same superpixels) with a randomisation sanity check and deletion/insertion metrics
    ([details](explainability.md)).
 6. **Demo.** The model runs in the browser via ONNX Runtime Web ([live demo](https://rishabh-bgp.github.io/brain-tumor-mri-classification/), [details](web_demo.md)).
 

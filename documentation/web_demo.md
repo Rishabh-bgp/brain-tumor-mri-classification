@@ -20,7 +20,7 @@ Everything runs in the browser; uploaded images never leave the device. There is
 | [`docs/logic.js`](../docs/logic.js) | Shared pure functions (softmax with temperature, normalised entropy, CAM extraction, up-sampling, foreground mask, the templated rationale); also tested in Node by [`tests/test_logic.js`](../tests/test_logic.js) |
 | [`docs/model/brain_tumor_effnetb0.onnx`](../docs/model/brain_tumor_effnetb0.onnx) | The exported model (16.0 MB) |
 | [`docs/stats.json`](../docs/stats.json) | Temperature, threshold τ and measured test statistics used by the "why" panel (written by `make_report.py`) |
-| [`docs/presets.json`](../docs/presets.json) + [`docs/samples/`](../docs/samples/) | Eight Testing images (unmodified originals) with saved PyTorch predictions and precomputed Grad-CAM++, IG and KernelSHAP maps (56×56) |
+| [`docs/presets.json`](../docs/presets.json) + [`docs/samples/`](../docs/samples/) | Eight Testing images (unmodified originals) with saved PyTorch predictions and precomputed Grad-CAM++, IG, KernelSHAP and LIME maps (56×56) |
 | [`docs/style.css`](../docs/style.css) | Styling |
 
 **Inference path.** File → greyscale → zero-pad to square → bilinear 224×224 (canvas) → float32 in [0, 1] →
@@ -32,7 +32,12 @@ Everything runs in the browser; uploaded images never leave the device. There is
   Grad-CAM equals CAM up to a positive scale.
 - *Occlusion*: a 32-pixel black square at stride 16 (13 × 13 = 169 forward passes) in batches of 4; the page yields to the
   browser after each batch so it stays responsive (about 9–12 seconds in our headless-Chrome tests).
-- *Grad-CAM++, Integrated Gradients, KernelSHAP*: precomputed in Python for the presets only.
+- *Grad-CAM++, Integrated Gradients, KernelSHAP, LIME*: precomputed in Python for the presets only.
+- *Why LIME is not computed for uploads*: with the evaluated setting LIME needs 200 forward passes, plus SLIC superpixels
+  (not available in the page) and a ridge fit. The forward passes alone took 11.0 s, 10.9 s
+  and 11.8 s (batches of 4, 10 and 50) in headless Chrome with one WebAssembly thread
+  ([`time_lime_browser.py`](../v2/scripts/time_lime_browser.py), [`lime_browser_timing.json`](../v2/results/xai/lime_browser_timing.json)),
+  above the ~10 s budget for the page. Fewer samples would be faster but would no longer be the evaluated method.
 
 **"Why this prediction" panel.** Template text that uses only the model's outputs (probabilities, entropy, where the map
 mass lies) and the measured statistics in `stats.json` (per-class recall and precision, uncertain-rate accuracy). It does not

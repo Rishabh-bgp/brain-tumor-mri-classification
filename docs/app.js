@@ -9,8 +9,9 @@
     { id: "gradcampp", name: "Grad-CAM++", label: "Grad-CAM++ — where the model looked (precomputed, sample slices only)" },
     { id: "integrated_gradients", name: "Integrated Gradients", label: "Integrated Gradients — pixel-level attribution (precomputed, sample slices only)" },
     { id: "kernel_shap", name: "KernelSHAP", label: "KernelSHAP — superpixel contributions (precomputed, sample slices only)" },
+    { id: "lime", name: "LIME", label: "LIME — superpixel contributions, same superpixels as KernelSHAP (precomputed, sample slices only)" },
   ];
-  const AG_NAMES = { gradcampp: "Grad-CAM++", integrated_gradients: "Integrated Gradients", occlusion: "Occlusion", kernel_shap: "KernelSHAP" };
+  const AG_NAMES = { gradcampp: "Grad-CAM++", integrated_gradients: "Integrated Gradients", occlusion: "Occlusion", kernel_shap: "KernelSHAP", lime: "LIME" };
   let session, stats, presets = [], cur = null, method = "gradcam", busy = false;
 
   // ---------- preprocessing: greyscale (ITU-R 601-2 luma, like Pillow), zero-pad to square, bilinear resize ----------
@@ -125,7 +126,7 @@
     const k = probs.indexOf(Math.max(...probs));
     const gc = L.upsample(L.camFor(r.cam, k), 7, S);
     cur = { gray, probs, k, logitK: r.logits[k], maps: { gradcam: gc }, preset, att: L.attention(gc, gray) };
-    if (preset) for (const m of ["gradcampp", "integrated_gradients", "kernel_shap"]) cur.maps[m] = decode56(preset.maps56[m]);
+    if (preset) for (const m of ["gradcampp", "integrated_gradients", "kernel_shap", "lime"]) if (preset.maps56[m]) cur.maps[m] = decode56(preset.maps56[m]);
     $("scan").hidden = true;
     $("status").textContent = `Done in ${Math.round(performance.now() - t0)} ms · on-device`;
     renderResult(); setMethodButtons();

@@ -45,7 +45,7 @@ for c in CLASSES:
     for _, r in pool[pool.true == c].sample(2, random_state=11).iterrows():
         x = torch.from_numpy(load_gray_square(str(root / r.relpath), 224)).float().div(255)[None, None]
         tgt = CLASSES.index(r.pred)
-        maps = {m: explain(gm, x, tgt, m) for m in METHODS}
+        maps = {m: explain(gm, x, tgt, m) for m in METHODS + ["lime"]}  # LIME added in v2.1.1
         name = Path(r.relpath).stem + ".jpg"
         # ship the original file byte-for-byte (no resize or recompression), so the browser sees exactly the
         # image the prediction file was computed from (checked by scripts/check_samples.py)
@@ -57,8 +57,8 @@ for c in CLASSES:
             enc[m] = base64.b64encode(small.tobytes()).decode()
         presets.append({"file": f"samples/{name}", "source": r.relpath, "true": r.true, "torch_pred": r.pred,
                         "torch_probs": [float(r[f"p_{k}"]) for k in CLASSES], "maps56": enc,
-                        "agreement_with_gradcam": {m: rank_corr(maps["gradcam"], maps[m]) for m in METHODS if m != "gradcam"},
-                        "attention": {m: attention_summary(maps[m], x[0, 0].numpy()) for m in METHODS}})
+                        "agreement_with_gradcam": {m: rank_corr(maps["gradcam"], maps[m]) for m in maps if m != "gradcam"},
+                        "attention": {m: attention_summary(maps[m], x[0, 0].numpy()) for m in maps}})
         print(r.relpath, r.true, "->", r.pred, round(r.confidence, 3), flush=True)
 (DOC / "presets.json").write_text(json.dumps(presets))
 print("pool size (non-augmented Testing images with no candidate pair at Hamming <= 10):", len(pool), pool.true.value_counts().to_dict())

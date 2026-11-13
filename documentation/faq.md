@@ -20,8 +20,9 @@ v2 is preferred because its split is cleaner. The accuracy change mainly reflect
 **Why does the demo say "uncertain"?** The calibrated top probability is below τ = 0.69. On Testing, such
 predictions are right only 39.3% of the time.
 
-**Why is LIME described but not reported?** It was not run; KernelSHAP on superpixels is the perturbation method evaluated.
-[Explainability](explainability.md#running-lime-yourself-not-part-of-the-reported-results) shows how to run it.
+**Is LIME included?** Yes, since v2.1.1, alongside KernelSHAP and on the same superpixels
+([results](explainability.md#lime-added-in-v211)). In the demo it is shown for the eight presets only (precomputed): with the
+evaluated setting its 200 forward passes alone took 10.9 s in headless Chrome, above the ~10 s budget.
 
 **Where does each number come from?** From `v2/results/`; the README, paper macros, demo statistics and this documentation are
 generated from those files ([results catalogue](results_catalogue.md)).

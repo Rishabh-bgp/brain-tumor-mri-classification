@@ -5,7 +5,7 @@
 ## Two versions in one repository
 | | Folder | Code at | Status |
 |---|---|---|---|
-| **v2** | [`v2/`](../v2/README.md) | `main` (tags `v2.0` … `v2.1.0`) | current; served by the [demo](https://rishabh-bgp.github.io/brain-tumor-mri-classification/) |
+| **v2** | [`v2/`](../v2/README.md) | `main` (tags `v2.0` … `v2.1.1`) | current; served by the [demo](https://rishabh-bgp.github.io/brain-tumor-mri-classification/) |
 | **v1** | [`v1/`](../v1/README.md) | tag [`v1.0`](https://github.com/Rishabh-bgp/brain-tumor-mri-classification/tree/v1.0) (commit `a591cfa`) | frozen; results, notebooks, paper and code kept for comparison |
 
 ## Results side by side
@@ -48,6 +48,14 @@ assignment is redrawn, so the difference mainly reflects run-to-run variance of 
 intervals do not capture.
 
 ## Changelog
+### v2.1.1
+- **LIME run** on the v2 model (no retraining), with the same SLIC superpixels, black baseline and 200 samples as KernelSHAP,
+  on the same 100 Testing images: deletion/insertion, foreground share, cascading model randomisation, agreement with the
+  other five methods, a target-class check and a seed check ([explainability](explainability.md#lime-added-in-v211);
+  [`run_lime.py`](../v2/scripts/run_lime.py)). Results are in new files; no existing metric changed.
+- LIME added to the paper, the XAI notebook, this documentation and the READMEs; LIME maps for the eight demo presets.
+  Not computed for uploads (more than ~10 s in the browser; [web demo](web_demo.md)).
+
 ### v2.1.0
 - **Repository restructured** into [`v1/`](../v1/README.md) and [`v2/`](../v2/README.md), each with its own scripts, source,
   results, notebooks, paper, README and requirements; shared [`docs/`](../docs/) (demo), [`tests/`](../tests/) and this

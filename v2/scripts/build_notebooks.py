@@ -180,10 +180,11 @@ for f in ("confusion_matrix", "roc_curves", "reliability"):
     display(Image(f"results/figures/{f}.png", width=480))'''),
     ])
 
-nb("04_explainable_ai.ipynb", "04 · Explainable AI: five attribution methods, sanity checks and faithfulness",
-   "Grad-CAM, Grad-CAM++, Integrated Gradients (Captum), occlusion sensitivity and KernelSHAP on SLIC superpixels, "
+nb("04_explainable_ai.ipynb", "04 · Explainable AI: six attribution methods, sanity checks and faithfulness",
+   "Grad-CAM, Grad-CAM++, Integrated Gradients (Captum), occlusion sensitivity, and KernelSHAP and LIME on the same SLIC "
+   "superpixels, "
    "checked with the cascading model-parameter randomisation test (Adebayo et al., 2018) and scored with deletion / "
-   "insertion AUC (Petsiuk et al., 2018). Set `FORCE_XAI = True` to recompute the full study (about 20–30 min on CPU).",
+   "insertion AUC (Petsiuk et al., 2018). Set `FORCE_XAI = True` / `FORCE_LIME = True` to recompute the studies on CPU.",
    [("code", r'''import numpy as np, pandas as pd, torch, matplotlib.pyplot as plt
 from pathlib import Path
 from btmri import CLASSES, CLASS_LABELS
@@ -195,14 +196,15 @@ model.load_state_dict(torch.load("results/runs/clean/best.pt", map_location="cpu
 gm = GreyModel(model).eval()
 root = download_dataset()
 pred = pd.read_csv("results/predictions/clean_test_predictions.csv")'''),
-    ("md", "### Live example: all five methods on one test slice per class"),
-    ("code", r'''fig, axes = plt.subplots(4, 6, figsize=(15, 10.5))
+    ("md", "### Live example: all six methods on one test slice per class"),
+    ("code", r'''ALL = METHODS + ["lime"]
+fig, axes = plt.subplots(4, 7, figsize=(17.5, 10.5))
 for i, c in enumerate(CLASSES):
     r = pred[(pred.true == c) & (pred.pred == c)].sample(1, random_state=3).iloc[0]
     x = torch.from_numpy(load_gray_square(str(root / r.relpath), 224)).float().div(255)[None, None]
     k = CLASSES.index(r.pred)
     axes[i, 0].imshow(x[0, 0], cmap="gray"); axes[i, 0].set_title(f"{CLASS_LABELS[c]} (p={r.confidence:.2f})", fontsize=9)
-    for j, mth in enumerate(METHODS):
+    for j, mth in enumerate(ALL):
         s = explain(gm, x, k, mth)
         d, ins = deletion_insertion(gm, x, k, s)
         axes[i, j + 1].imshow(x[0, 0], cmap="gray"); axes[i, j + 1].imshow(s, cmap="jet", alpha=0.45)
@@ -222,6 +224,25 @@ display(pd.read_csv("results/xai/method_agreement_spearman.csv", index_col=0).ro
 for f in ("xai_faithfulness", "xai_sanity_check", "xai_agreement", "xai_grid_correct", "xai_grid_misclassified"):
     if Path(f"results/figures/{f}.png").exists():
         display(Image(f"results/figures/{f}.png", width=900 if "grid" in f else 620))'''),
+    ("md", "### LIME (added in v2.1.1)\n"
+           "Same 100 images, target, SLIC superpixels (64 segments), black baseline and 200 samples as KernelSHAP; an "
+           "exponential kernel (width 0.25) on the cosine distance between the binary superpixel vector and the all-on "
+           "vector weights a ridge regression (alpha 1) on the class logit. Results are in separate files written by "
+           "`scripts/run_lime.py`; the original five-method files are unchanged. The model-parameter randomisation test is "
+           "run on the same 12 images. The data (label) randomisation test of Adebayo et al. would need retraining on "
+           "shuffled labels and is not run; instead each map is compared with the maps for the other three classes."),
+    ("code", r'''FORCE_LIME = False
+if FORCE_LIME or not Path("results/xai/lime_summary.json").exists():
+    subprocess.run([sys.executable, "scripts/run_lime.py"], check=True)
+import json
+lf = pd.read_csv("results/xai/lime_faithfulness_per_image.csv")
+display(pd.concat([faith, lf[faith.columns]]).groupby("method")[["deletion_auc", "insertion_auc", "inside_foreground"]].mean().round(3))
+display(pd.read_csv("results/xai/lime_sanity_cascading_randomisation.csv").groupby("stage", sort=False).spearman.mean().round(3).to_frame("LIME"))
+display(pd.read_csv("results/xai/method_agreement_spearman_with_lime.csv", index_col=0).round(2))
+ls = json.load(open("results/xai/lime_summary.json"))
+print("target-class sensitivity (mean Spearman with other-class maps):", {k: round(v, 2) for k, v in ls["target_class_sensitivity_mean_spearman"].items()})
+print("seed stability (mean Spearman between seeds):", {k: round(v, 2) for k, v in ls["seed_stability_mean_spearman"].items()})
+display(Image("results/figures/xai_lime_examples.png", width=420))'''),
     ])
 
 nb("05_onnx_export_and_web_demo.ipynb", "05 · ONNX export for the in-browser demo",

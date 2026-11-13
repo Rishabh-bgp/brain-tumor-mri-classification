@@ -24,6 +24,12 @@ cand = pd.read_csv(ROOT / "results/review/candidate_pairs_hamming_le10.csv.gz")
 fa = pd.read_csv(ROOT / "results/xai/faithfulness_per_image.csv")
 san = pd.read_csv(ROOT / "results/xai/sanity_cascading_randomisation.csv")
 ag = pd.read_csv(ROOT / "results/xai/method_agreement_spearman.csv", index_col=0)
+# LIME (v2.1.1, scripts/run_lime.py) is stored in separate files; merge it into the tables here
+fa = pd.concat([fa, pd.read_csv(ROOT / "results/xai/lime_faithfulness_per_image.csv")[fa.columns]], ignore_index=True)
+san = pd.concat([san, pd.read_csv(ROOT / "results/xai/lime_sanity_cascading_randomisation.csv")], ignore_index=True)
+ag = pd.read_csv(ROOT / "results/xai/method_agreement_spearman_with_lime.csv", index_col=0)
+LS = json.loads((ROOT / "results/xai/lime_summary.json").read_text())
+LT = json.loads((ROOT / "results/xai/lime_browser_timing.json").read_text())
 hc, hn = pd.read_csv(ROOT / "results/runs/clean/history.csv"), pd.read_csv(ROOT / "results/runs/naive/history.csv")
 p1 = pd.read_csv(REPO / "v1/results/predictions/clean_test_predictions.csv").set_index("relpath")
 p2 = pd.read_csv(ROOT / "results/predictions/clean_test_predictions.csv").set_index("relpath")
@@ -81,7 +87,7 @@ n_fa_img = fa.relpath.nunique()
 const_gc = int(san[san.method == "gradcam"].constant_map.sum()) if "constant_map" in san else 0
 rows_gc = int((san.method == "gradcam").sum())
 MN = {"gradcam": "Grad-CAM", "gradcampp": "Grad-CAM++", "integrated_gradients": "Integrated Gradients", "occlusion": "Occlusion",
-      "kernel_shap": "KernelSHAP (SLIC superpixels)", "random": "Random baseline"}
+      "kernel_shap": "KernelSHAP (SLIC superpixels)", "lime": "LIME (SLIC superpixels)", "random": "Random baseline"}
 ex_strict = cand[cand.strict_dup & cand.cross_split & ~cand.md5_equal].sort_values(["hamming", "path_i"]).iloc[0]
 ex_v1 = cand[cand.linked_v1 & ~cand.strict_dup & cand.cross_split].sort_values(["hamming", "path_i"], ascending=[False, True]).iloc[0]
 ex_v2 = pair("Tr-no_942.jpg", "Te-no_151.jpg")
@@ -157,7 +163,7 @@ on the Kaggle *Brain Tumor MRI Dataset* (version 2) and puts evaluation hygiene 
 3. **Model.** An ImageNet-pretrained EfficientNet-B0 fine-tuned on a CPU ([details](model_and_training.md)).
 4. **Calibration and uncertainty.** Temperature scaling and a validation-chosen confidence threshold
    ([details](evaluation_and_calibration.md)).
-5. **Explainability.** Five attribution methods with a randomisation sanity check and deletion/insertion metrics
+5. **Explainability.** Six attribution methods (including KernelSHAP and LIME on the same superpixels) with a randomisation sanity check and deletion/insertion metrics
    ([details](explainability.md)).
 6. **Demo.** The model runs in the browser via ONNX Runtime Web ([live demo]({PAGES}), [details](web_demo.md)).
 
@@ -532,7 +538,7 @@ cases but is no guarantee. The normalised entropy of the probabilities is report
 """)
 
 # ================================================================ explainability
-MO = ["gradcam", "gradcampp", "integrated_gradients", "occlusion", "kernel_shap"]
+MO = ["gradcam", "gradcampp", "integrated_gradients", "occlusion", "kernel_shap", "lime"]
 SN = {"classifier": "classifier only", "conv_head": "+ conv_head", "blocks.6": "+ blocks 6", "blocks.4": "+ blocks 5–4",
       "blocks.2": "+ blocks 3–2", "conv_stem": "all layers"}
 w("explainability.md", f"""
@@ -545,7 +551,7 @@ Code: [`v2/src/btmri/xai.py`](../v2/src/btmri/xai.py), [`v2/scripts/run_xai.py`]
 [`04_explainable_ai.ipynb`](../v2/notebooks/04_explainable_ai.ipynb); results in [`v2/results/xai/`](../v2/results/xai/summary.md).
 
 **Summary.** Heatmaps show which pixels a method associates with the prediction. They are *not* evidence that the model
-uses tumour tissue, and in this study none of the five methods beats a random map on the deletion test. Treat them as a
+uses tumour tissue, and in this study none of the six methods beats a random map on the deletion test. Treat them as a
 debugging aid, not as a clinical explanation.
 
 ## Set-up
@@ -554,7 +560,7 @@ debugging aid, not as a clinical explanation.
 - Images: {n_fa_img} Testing images (25 per true class, `sample(25, random_state=42)`) for faithfulness and agreement;
   {n_san_img} of them (3 per class) for the sanity check.
 - Every map is clipped/absolute-valued as described below and min-max normalised to [0, 1].
-- Run: `python scripts/run_xai.py [threads]` from `v2/` (default 8 torch threads).
+- Run: `python scripts/run_xai.py [threads]` and, for LIME, `python scripts/run_lime.py [threads]` from `v2/` (default 8 torch threads).
 
 ## Methods
 | Method | How it works | Settings in this project |
@@ -564,18 +570,8 @@ debugging aid, not as a clinical explanation.
 | **Integrated Gradients** (Sundararajan et al., 2017) | Averages gradients along the straight path from a baseline image to the input and multiplies by (input − baseline). | Captum, black baseline, 32 steps, absolute value. |
 | **Occlusion** (Zeiler and Fergus, 2014) | Slides a black square over the image and records how much the class logit drops. | Captum, 32×32 window, stride 16, positive drops only. |
 | **KernelSHAP on superpixels** (Lundberg and Lee, 2017) | Splits the image into superpixels, switches random subsets off (black) and fits a weighted linear model whose coefficients approximate Shapley values of the class logit. | SLIC with 64 segments and compactness 0.1, 200 samples, black baseline, positive values only. |
-| **LIME** (Ribeiro et al., 2016) | Fits a sparse, locally weighted linear model on random superpixel perturbations. | **Not run in this project.** KernelSHAP on superpixels is the perturbation-based method that was evaluated; LIME is described here for completeness. |
+| **LIME** (Ribeiro et al., 2016) | Switches random subsets of superpixels off and fits a linear model weighted by how close each perturbed image is to the original. | Same SLIC superpixels, black baseline and 200 samples as KernelSHAP; exponential kernel (width 0.25) on cosine distance; ridge regression (α = 1) on the class logit; positive coefficients only. Added in v2.1.1 ([details](#lime-added-in-v211)). |
 
-### Running LIME yourself (not part of the reported results)
-The same model wrapper and superpixels work with Captum's `Lime`:
-```python
-from captum.attr import Lime
-from btmri.xai import GreyModel, superpixels
-gm = GreyModel(model).eval()
-seg = torch.from_numpy(superpixels(x)).long()[None, None]     # x: (1, 1, 224, 224) in [0, 1]
-attr = Lime(gm).attribute(x, target=target, baselines=0.0, feature_mask=seg, n_samples=200, perturbations_per_eval=50)
-```
-No LIME numbers are reported anywhere in this repository.
 
 ## Faithfulness: deletion and insertion (Petsiuk et al., 2018)
 Pixels are ranked by the map (ties broken randomly with a fixed seed). **Deletion** sets the top pixels to black in 32 steps
@@ -603,7 +599,7 @@ correlation (maps average-pooled to 56×56). A method that depends on the learne
 | Method | """ + " | ".join(SN[s] for s in stages) + " |\n|---|" + "---|" * len(stages) + "\n" + "\n".join(
     f"| {MN[k]} | " + " | ".join(r(sm[(k, s)], 2) for s in stages) + " |" for k in MO) + f"""
 
-- **Grad-CAM, occlusion and KernelSHAP** change almost completely once the classifier is randomised: they depend on the model.
+- **Grad-CAM, occlusion, KernelSHAP and LIME** change almost completely once the classifier is randomised: they depend on the model.
 - **Integrated Gradients** stays at {r(sm[('integrated_gradients', 'conv_stem')], 2)} even with all layers random, so it mostly reflects the
   input image (edges and intensity), not the trained model: it fails the test.
 - **KernelSHAP** keeps a small correlation ({r(sm[('kernel_shap', 'conv_stem')], 2)}) after full randomisation because its superpixels depend on the image.
@@ -618,8 +614,53 @@ Mean Spearman correlation between maps on the same image ({n_fa_img} images):
 | | """ + " | ".join(MN[k] for k in MO) + " |\n|---|" + "---|" * len(MO) + "\n" + "\n".join(
     f"| {MN[a]} | " + " | ".join(r(ag.loc[a, b], 2) for b in MO) + " |" for a in MO) + f"""
 
-Only the two CAM methods agree closely; the perturbation and gradient methods highlight different pixels. Figure:
+Only the two CAM methods agree closely; LIME agrees best with KernelSHAP, which shares its superpixels; the other perturbation and gradient methods highlight different pixels. Figure:
 [`xai_agreement.png`](../v2/results/figures/xai_agreement.png).
+
+## LIME (added in v2.1.1)
+LIME was added in v2.1.1 alongside KernelSHAP, on the same {n_fa_img} images (faithfulness, agreement) and {n_san_img}
+images (sanity checks), with the same SLIC superpixels, black baseline, number of samples and target. Code:
+`lime()` in [`xai.py`](../v2/src/btmri/xai.py) and [`v2/scripts/run_lime.py`](../v2/scripts/run_lime.py); results in
+separate files (`results/xai/lime_*`, `method_agreement_spearman_with_lime.csv`, `target_class_sensitivity.csv`), so the
+original five-method files are unchanged. Recomputing the five original maps for the agreement matrix reproduced the saved
+5 × 5 agreement exactly (maximum difference {LS['agreement_5x5_recomputed_max_abs_diff']:.2g}).
+
+| | LIME | KernelSHAP |
+|---|---|---|
+| Deletion AUC ↓ (random {r(fm.loc['random', 'deletion_auc'])}) | {r(fm.loc['lime', 'deletion_auc'])} | {r(fm.loc['kernel_shap', 'deletion_auc'])} |
+| Insertion AUC ↑ (random {r(fm.loc['random', 'insertion_auc'])}) | {r(fm.loc['lime', 'insertion_auc'])} | {r(fm.loc['kernel_shap', 'insertion_auc'])} |
+| Share of map inside the foreground | {pc(fm.loc['lime', 'inside_foreground'])} | {pc(fm.loc['kernel_shap', 'inside_foreground'])} |
+| ρ after classifier randomised / after full randomisation | {r(sm[('lime', 'classifier')], 2)} / {r(sm[('lime', 'conv_stem')], 2)} | {r(sm[('kernel_shap', 'classifier')], 2)} / {r(sm[('kernel_shap', 'conv_stem')], 2)} |
+| ρ with the other-class maps (target-class check) | {r(LS['target_class_sensitivity_mean_spearman']['lime'], 2)} | {r(LS['target_class_sensitivity_mean_spearman']['kernel_shap'], 2)} |
+| ρ between three random seeds (stability) | {r(LS['seed_stability_mean_spearman']['lime'], 2)} | {r(LS['seed_stability_mean_spearman']['kernel_shap'], 2)} |
+| Agreement LIME ↔ KernelSHAP | {r(ag.loc['lime', 'kernel_shap'], 2)} | |
+
+What LIME found:
+- **Faithfulness.** Insertion {r(fm.loc['lime', 'insertion_auc'])} is above random and above KernelSHAP, below Grad-CAM,
+  Grad-CAM++ and occlusion. Deletion {r(fm.loc['lime', 'deletion_auc'])} is, like every method except Integrated
+  Gradients (which only matches random), worse than the random map.
+- **Sanity check.** LIME passes the model-parameter randomisation test clearly: its correlation with the trained-model
+  map is already {r(sm[('lime', 'classifier')], 2)} after randomising only the classifier.
+- **Agreement.** LIME agrees most with KernelSHAP ({r(ag.loc['lime', 'kernel_shap'], 2)}), which uses the same superpixels,
+  and only weakly with Grad-CAM ({r(ag.loc['lime', 'gradcam'], 2)}) and occlusion ({r(ag.loc['lime', 'occlusion'], 2)}).
+- **Stability.** With 200 samples, LIME maps from different random seeds agree better than KernelSHAP maps
+  ({r(LS['seed_stability_mean_spearman']['lime'], 2)} vs {r(LS['seed_stability_mean_spearman']['kernel_shap'], 2)}), but neither is fully stable.
+
+Settings: SLIC (64 segments, compactness 0.1), 200 samples with each superpixel kept with probability 0.5 (Captum's
+default sampler), weights exp(−d²/0.25²) with d the cosine distance between the binary superpixel vector and the all-on
+vector (as in the reference `lime` image explainer), weighted ridge regression (α = 1) on the class logit, positive
+coefficients kept. Example maps: [`xai_lime_examples.png`](../v2/results/figures/xai_lime_examples.png).
+
+## Target-class check (all six methods)
+On the {n_san_img} sanity images each map for the predicted class is compared with the maps for the other three classes
+(mean Spearman). A map that explains the decision should change when asked about another class:
+
+| Method | """ + " | ".join(MN[k] for k in MO) + " |\n|---|" + "---|" * len(MO) + "\n| ρ with other-class maps | " + " | ".join(
+    r(LS['target_class_sensitivity_mean_spearman'][k], 2) for k in MO) + f""" |
+
+Grad-CAM++ and Integrated Gradients barely change with the target class, consistent with their weak sanity-check results.
+The data (label) randomisation test of Adebayo et al. (2018) needs a model retrained on shuffled labels and was **not run**
+(this project does not retrain).
 
 ## How to read the heatmaps
 1. **Warm colours = higher attribution for the predicted class**, normalised per image; compare locations, not absolute values
@@ -661,7 +702,7 @@ Everything runs in the browser; uploaded images never leave the device. There is
 | [`docs/logic.js`](../docs/logic.js) | Shared pure functions (softmax with temperature, normalised entropy, CAM extraction, up-sampling, foreground mask, the templated rationale); also tested in Node by [`tests/test_logic.js`](../tests/test_logic.js) |
 | [`docs/model/brain_tumor_effnetb0.onnx`](../docs/model/brain_tumor_effnetb0.onnx) | The exported model ({r(onx['onnx_size_mb'], 1)} MB) |
 | [`docs/stats.json`](../docs/stats.json) | Temperature, threshold τ and measured test statistics used by the "why" panel (written by `make_report.py`) |
-| [`docs/presets.json`](../docs/presets.json) + [`docs/samples/`](../docs/samples/) | Eight Testing images (unmodified originals) with saved PyTorch predictions and precomputed Grad-CAM++, IG and KernelSHAP maps (56×56) |
+| [`docs/presets.json`](../docs/presets.json) + [`docs/samples/`](../docs/samples/) | Eight Testing images (unmodified originals) with saved PyTorch predictions and precomputed Grad-CAM++, IG, KernelSHAP and LIME maps (56×56) |
 | [`docs/style.css`](../docs/style.css) | Styling |
 
 **Inference path.** File → greyscale → zero-pad to square → bilinear 224×224 (canvas) → float32 in [0, 1] →
@@ -673,7 +714,12 @@ Everything runs in the browser; uploaded images never leave the device. There is
   Grad-CAM equals CAM up to a positive scale.
 - *Occlusion*: a 32-pixel black square at stride 16 (13 × 13 = 169 forward passes) in batches of 4; the page yields to the
   browser after each batch so it stays responsive (about 9–12 seconds in our headless-Chrome tests).
-- *Grad-CAM++, Integrated Gradients, KernelSHAP*: precomputed in Python for the presets only.
+- *Grad-CAM++, Integrated Gradients, KernelSHAP, LIME*: precomputed in Python for the presets only.
+- *Why LIME is not computed for uploads*: with the evaluated setting LIME needs 200 forward passes, plus SLIC superpixels
+  (not available in the page) and a ridge fit. The forward passes alone took {r(LT['batch4'], 1)} s, {r(LT['batch10'], 1)} s
+  and {r(LT['batch50'], 1)} s (batches of 4, 10 and 50) in headless Chrome with one WebAssembly thread
+  ([`time_lime_browser.py`](../v2/scripts/time_lime_browser.py), [`lime_browser_timing.json`](../v2/results/xai/lime_browser_timing.json)),
+  above the ~10 s budget for the page. Fewer samples would be faster but would no longer be the evaluated method.
 
 **"Why this prediction" panel.** Template text that uses only the model's outputs (probabilities, entropy, where the map
 mass lies) and the measured statistics in `stats.json` (per-class recall and precision, uncertain-rate accuracy). It does not
@@ -725,7 +771,7 @@ w("changelog.md", f"""
 ## Two versions in one repository
 | | Folder | Code at | Status |
 |---|---|---|---|
-| **v2** | [`v2/`](../v2/README.md) | `main` (tags `v2.0` … `v2.1.0`) | current; served by the [demo]({PAGES}) |
+| **v2** | [`v2/`](../v2/README.md) | `main` (tags `v2.0` … `v2.1.1`) | current; served by the [demo]({PAGES}) |
 | **v1** | [`v1/`](../v1/README.md) | tag [`v1.0`]({GH}/tree/v1.0) (commit `a591cfa`) | frozen; results, notebooks, paper and code kept for comparison |
 
 ## Results side by side
@@ -747,6 +793,14 @@ assignment is redrawn, so the difference mainly reflects run-to-run variance of 
 intervals do not capture.
 
 ## Changelog
+### v2.1.1
+- **LIME run** on the v2 model (no retraining), with the same SLIC superpixels, black baseline and 200 samples as KernelSHAP,
+  on the same 100 Testing images: deletion/insertion, foreground share, cascading model randomisation, agreement with the
+  other five methods, a target-class check and a seed check ([explainability](explainability.md#lime-added-in-v211);
+  [`run_lime.py`](../v2/scripts/run_lime.py)). Results are in new files; no existing metric changed.
+- LIME added to the paper, the XAI notebook, this documentation and the READMEs; LIME maps for the eight demo presets.
+  Not computed for uploads (more than ~10 s in the browser; [web demo](web_demo.md)).
+
 ### v2.1.0
 - **Repository restructured** into [`v1/`](../v1/README.md) and [`v2/`](../v2/README.md), each with its own scripts, source,
   results, notebooks, paper, README and requirements; shared [`docs/`](../docs/) (demo), [`tests/`](../tests/) and this
@@ -849,9 +903,12 @@ SCR = [
      "`models/brain_tumor_effnetb0.onnx` and `.pt`, `docs/model/brain_tumor_effnetb0.onnx`, `results/onnx_verification.json`"),
     ("scripts/run_xai.py", "optional positional: number of torch threads (default 8)", "Runs the XAI study (faithfulness, foreground share, agreement, sanity check) and draws the XAI figures.",
      "`results/xai/*.csv`, `results/figures/xai_*.png`"),
+    ("scripts/run_lime.py", "optional positional: number of torch threads (default 8)", "Runs LIME on the same 100 images and superpixels as KernelSHAP, recomputes the other five maps, and writes LIME faithfulness, sanity check, 6 × 6 agreement, target-class check and seed check.",
+     "`results/xai/lime_*.csv`, `method_agreement_spearman_with_lime.csv`, `target_class_sensitivity.csv`, `lime_summary.json`, `results/figures/xai_lime_examples.png`"),
+    ("scripts/time_lime_browser.py", "URL of the served demo", "Times the 200 forward passes LIME would need in headless Chrome with ONNX Runtime Web (one WASM thread).", "`results/xai/lime_browser_timing.json`"),
     ("scripts/plot_xai_summary.py", "—", "Redraws the XAI summary figures from the saved CSVs.", "`results/figures/xai_{{sanity_check,faithfulness,agreement}}.png`"),
     ("scripts/xai_summary_md.py", "—", "Writes the XAI summary text used by the README.", "`results/xai/summary.md`"),
-    ("scripts/make_presets.py", "—", "Selects the eight demo presets (no candidate pair at Hamming ≤ 10, no `-aug-` files, seed 42), copies the files byte-for-byte and precomputes Grad-CAM++, IG and KernelSHAP maps.",
+    ("scripts/make_presets.py", "—", "Selects the eight demo presets (no candidate pair at Hamming ≤ 10, no `-aug-` files, seed 42), copies the files byte-for-byte and precomputes Grad-CAM++, IG, KernelSHAP and LIME maps.",
      "`docs/presets.json`, `docs/samples/*`, `results/review/preset_pool.json`"),
     ("scripts/check_samples.py", "—", "Runs the shipped ONNX model on each preset and checks it against the prediction file (each probability within 0.01, same uncertain flag); exits non-zero on failure.", "console report"),
     ("scripts/make_paper_numbers.py", "—", "Writes every number used in the paper as a LaTeX macro, plus the XAI table.", "`paper/numbers.tex`, `paper/tables/xai.tex`"),
@@ -941,8 +998,16 @@ DESC = {
     "runs/naive/val_logits.csv": "Raw logits on the naive validation images.",
     "xai/faithfulness_per_image.csv": "Per image and method: deletion AUC, insertion AUC, foreground share.",
     "xai/faithfulness_summary.csv": "Mean and standard deviation of the above per method.",
-    "xai/method_agreement_spearman.csv": "Mean Spearman correlation between methods (5 × 5).",
+    "xai/method_agreement_spearman.csv": "Mean Spearman correlation between the five original methods (5 × 5).",
     "xai/sanity_cascading_randomisation.csv": "Per stage, method and image: Spearman correlation with the trained-model map, constant-map flag.",
+    "xai/lime_faithfulness_per_image.csv": "LIME per image: deletion AUC, insertion AUC, foreground share, constant-map flag (same images as `faithfulness_per_image.csv`).",
+    "xai/lime_sanity_cascading_randomisation.csv": "LIME cascading model randomisation: per stage and image, Spearman with the trained-model map, constant-map flag.",
+    "xai/method_agreement_spearman_with_lime.csv": "Mean Spearman correlation between the six methods including LIME (6 × 6); the 5 × 5 part equals `method_agreement_spearman.csv`.",
+    "xai/target_class_sensitivity.csv": "Per image, method and other class: Spearman between the map for the predicted class and the map for that other class.",
+    "xai/lime_stability.csv": "LIME and KernelSHAP maps with seeds 0, 1, 2: per image, Spearman between seed pairs.",
+    "xai/lime_summary.json": "Summary of the LIME run: settings, faithfulness, sanity, agreement, target-class and seed-check means, run time.",
+    "xai/lime_browser_timing.json": "Seconds for 200 forward passes in headless Chrome (ONNX Runtime Web, one WASM thread), batches of 4, 10 and 50.",
+    "figures/xai_lime_examples.png": "KernelSHAP and LIME maps side by side for two Testing images per class from the evaluation sample.",
     "xai/summary.md": "Text summary of the XAI results used in the README.",
 }
 files = sorted(p.relative_to(ROOT / "results").as_posix() for p in (ROOT / "results").rglob("*") if p.is_file())
@@ -1191,15 +1256,17 @@ These are the specific known weaknesses of this study and demo. Each one limits 
     with its original map after all weights are randomised, and Grad-CAM++ stays at {r(sm[('gradcampp', 'classifier')], 2)} after
     the classifier is randomised.
 12. **Small XAI sample and no ground truth.** {n_fa_img} images for faithfulness, {n_san_img} for the sanity check, and no tumour
-    masks, so localisation accuracy was not measured. LIME was not run.
+    masks, so localisation accuracy was not measured. The data (label) randomisation test was not run because it needs
+    retraining. KernelSHAP and LIME maps change with the random seed (mean Spearman between seeds
+    {r(LS['seed_stability_mean_spearman']['kernel_shap'], 2)} and {r(LS['seed_stability_mean_spearman']['lime'], 2)}).
 
 ## Web demo
 13. **Image recompression (fixed in v2.0.2).** Until v2.0.2 the preset images were resized and re-encoded, which changed the
     displayed result of `Te-gl_391`. Since v2.0.2 the presets are the original files, byte-for-byte, and an automated check
     confirms they reproduce the saved predictions within 0.01. Uploaded images are still decoded and resized by the browser's
     canvas, which can differ slightly from PIL; in our test of 12 uploads the largest probability difference to PyTorch was 0.0011.
-14. **Precomputed maps for presets only.** Grad-CAM++, Integrated Gradients and KernelSHAP are shown only for the eight presets;
-    uploads get Grad-CAM and occlusion.
+14. **Precomputed maps for presets only.** Grad-CAM++, Integrated Gradients, KernelSHAP and LIME are shown only for the eight
+    presets; uploads get Grad-CAM and occlusion. LIME would take more than ~10 s in the browser ([web demo](web_demo.md)).
 15. **Any image gets an answer.** The model has no out-of-distribution detector; a non-MRI image still receives one of the four
     classes, possibly with high confidence.
 """)
@@ -1228,7 +1295,8 @@ Concrete next steps, roughly in order of how much they would change the conclusi
 7. **Better uncertainty.** Compare temperature scaling with ensembles or conformal prediction sets, and add an
    out-of-distribution check so that non-MRI inputs are rejected.
 8. **Localisation ground truth for XAI.** Use the tumour masks in the figshare release to measure how much of each heatmap
-   falls on the tumour, extend the sanity check to more images, and run LIME alongside KernelSHAP with the same superpixels.
+   falls on the tumour, extend the sanity check to more images, and run the data (label) randomisation test, which needs a
+   model retrained on shuffled labels.
 9. **Larger or more modern backbones with a GPU.** Compare with ConvNeXt or ViT models and a hyper-parameter search, keeping the
    same leakage-aware split so the comparison is fair.
 10. **Demo.** Show precomputed maps for uploads where feasible (e.g. Grad-CAM++ in the browser) and add an input check that
@@ -1259,8 +1327,9 @@ v2 is preferred because its split is cleaner. The accuracy change mainly reflect
 **Why does the demo say "uncertain"?** The calibrated top probability is below τ = {r(U['conf_threshold'], 2)}. On Testing, such
 predictions are right only {pc(F['accuracy_uncertain'])} of the time.
 
-**Why is LIME described but not reported?** It was not run; KernelSHAP on superpixels is the perturbation method evaluated.
-[Explainability](explainability.md#running-lime-yourself-not-part-of-the-reported-results) shows how to run it.
+**Is LIME included?** Yes, since v2.1.1, alongside KernelSHAP and on the same superpixels
+([results](explainability.md#lime-added-in-v211)). In the demo it is shown for the eight presets only (precomputed): with the
+evaluated setting its 200 forward passes alone took {r(LT['batch10'], 1)} s in headless Chrome, above the ~10 s budget.
 
 **Where does each number come from?** From `v2/results/`; the README, paper macros, demo statistics and this documentation are
 generated from those files ([results catalogue](results_catalogue.md)).
@@ -1338,7 +1407,7 @@ toc = "\n".join(f"{i}. [{t}]({'documentation/' + f if not f.startswith('../') el
 Four-way classification of brain MRI slices (glioma, meningioma, pituitary tumour, no tumour) on the Kaggle
 [Brain Tumor MRI Dataset](https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset), with evaluation
 hygiene first: a perceptual-hash audit of near-duplicates shared by the official Training and Testing folders, a
-leakage-aware split, an EfficientNet-B0 fine-tuned on a CPU, temperature scaling with an "uncertain" flag, five
+leakage-aware split, an EfficientNet-B0 fine-tuned on a CPU, temperature scaling with an "uncertain" flag, six
 sanity-checked explanation methods, and an in-browser demo.
 
 By **Rishabh Aryan**, M.Tech (Artificial Intelligence and Data Science), Department of Computer Science and Engineering,

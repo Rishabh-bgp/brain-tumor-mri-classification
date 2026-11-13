@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.x_CPU-EE4C2C?logo=pytorch&logoColor=white)
 ![timm](https://img.shields.io/badge/timm-EfficientNet--B0-0F766E)
-![Captum](https://img.shields.io/badge/XAI-Grad--CAM·IG·Occlusion·SHAP-14B8A6)
+![Captum](https://img.shields.io/badge/XAI-Grad--CAM·IG·Occlusion·SHAP·LIME-14B8A6)
 ![ONNX Runtime Web](https://img.shields.io/badge/ONNX_Runtime-Web-005CED?logo=onnx&logoColor=white)
 ![Jupyter](https://img.shields.io/badge/Jupyter-5_notebooks-F37626?logo=jupyter&logoColor=white)
 [![Live demo](https://img.shields.io/badge/live_demo-NEURO%2F%2FSCAN-2DD4BF?logo=githubpages&logoColor=black)](https://rishabh-bgp.github.io/brain-tumor-mri-classification/)
@@ -26,7 +26,7 @@
 on the Kaggle [Brain Tumor MRI Dataset](https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset).
 The project puts evaluation hygiene first: a perceptual-hash audit finds **near-duplicate images shared by the official
 Training and Testing folders**, the training data are de-leaked and split by duplicate group, an ImageNet-pretrained
-**EfficientNet-B0** is fine-tuned on a CPU, calibrated with temperature scaling, explained with **five XAI methods**
+**EfficientNet-B0** is fine-tuned on a CPU, calibrated with temperature scaling, explained with **six XAI methods**
 that are sanity-checked and scored with deletion/insertion metrics, and served as a static web app where the model runs **in your
 browser**.
 
@@ -70,7 +70,7 @@ A radiology-workstation-style page: drop an MRI slice (or click one of eight tes
 class), watch the scan line sweep while EfficientNet-B0 runs through ONNX Runtime Web (WebAssembly), and read:
 
 - **animated, calibrated class probabilities** for glioma, meningioma, pituitary and no tumour;
-- a **heat overlay with an opacity slider** and a method toggle: **Grad-CAM** (exact, computed from the ONNX feature map and classifier weights), **occlusion** (32-px patch, stride 16: 169 masked forward passes in the browser, the same setting as the paper), and for the samples precomputed **Grad-CAM++, Integrated Gradients and KernelSHAP**;
+- a **heat overlay with an opacity slider** and a method toggle: **Grad-CAM** (exact, computed from the ONNX feature map and classifier weights), **occlusion** (32-px patch, stride 16: 169 masked forward passes in the browser, the same setting as the paper), and for the samples precomputed **Grad-CAM++, Integrated Gradients, KernelSHAP and LIME** (LIME is not computed for uploads: with the evaluated setting it would take more than about 10 s in the browser);
 - a **"Why this prediction" panel** built from templates filled only with measured quantities: calibrated confidence, margin over the runner-up, an *uncertain — low confidence* flag, entropy, where the Grad-CAM mass falls, agreement between XAI methods (samples), and the class's real test precision/recall and most common confusion. It contains no medical reasoning.
 
 Images never leave your device. Mobile layout: [screenshot](../docs/screenshot_mobile.png).
@@ -82,7 +82,7 @@ Images never leave your device. Mobile layout: [screenshot](../docs/screenshot_m
 | 1 | [01_data_and_deduplication.ipynb](notebooks/01_data_and_deduplication.ipynb) | `kagglehub` download, inspection, MD5 + pHash + correlation duplicate audit, leakage-aware split | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Rishabh-bgp/brain-tumor-mri-classification/blob/main/v2/notebooks/01_data_and_deduplication.ipynb) |
 | 2 | [02_training_efficientnet_b0.ipynb](notebooks/02_training_efficientnet_b0.ipynb) | EfficientNet-B0 fine-tuning, leakage-aware and naive runs, training curves | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Rishabh-bgp/brain-tumor-mri-classification/blob/main/v2/notebooks/02_training_efficientnet_b0.ipynb) |
 | 3 | [03_evaluation_and_calibration.ipynb](notebooks/03_evaluation_and_calibration.ipynb) | Prediction file, temperature scaling, uncertainty threshold, metrics with bootstrap CIs, confusion matrix, ROC, leakage comparison | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Rishabh-bgp/brain-tumor-mri-classification/blob/main/v2/notebooks/03_evaluation_and_calibration.ipynb) |
-| 4 | [04_explainable_ai.ipynb](notebooks/04_explainable_ai.ipynb) | Grad-CAM, Grad-CAM++, Integrated Gradients, occlusion, KernelSHAP; randomisation sanity check; deletion/insertion AUC; per-class and error grids | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Rishabh-bgp/brain-tumor-mri-classification/blob/main/v2/notebooks/04_explainable_ai.ipynb) |
+| 4 | [04_explainable_ai.ipynb](notebooks/04_explainable_ai.ipynb) | Grad-CAM, Grad-CAM++, Integrated Gradients, occlusion, KernelSHAP, LIME; randomisation sanity check; deletion/insertion AUC; per-class and error grids | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Rishabh-bgp/brain-tumor-mri-classification/blob/main/v2/notebooks/04_explainable_ai.ipynb) |
 | 5 | [05_onnx_export_and_web_demo.ipynb](notebooks/05_onnx_export_and_web_demo.ipynb) | ONNX export (logits + CAM), PyTorch/ONNX agreement check | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Rishabh-bgp/brain-tumor-mri-classification/blob/main/v2/notebooks/05_onnx_export_and_web_demo.ipynb) |
 
 Each notebook installs its dependencies on Colab, checks for a GPU, clones this repository for the `src/` package and
@@ -158,8 +158,9 @@ suggests a shift between the Training and Testing folders beyond the duplicates 
 
 ## 🔬 Explainable AI
 
-Five attribution methods for the predicted class: **Grad-CAM**, **Grad-CAM++**, **Integrated Gradients** (Captum, 32 steps,
-black baseline), **occlusion** (32-px patch, stride 16) and **KernelSHAP** on ~64 SLIC superpixels (200 coalitions).
+Six attribution methods for the predicted class: **Grad-CAM**, **Grad-CAM++**, **Integrated Gradients** (Captum, 32 steps,
+black baseline), **occlusion** (32-px patch, stride 16), and **KernelSHAP** (200 coalitions) and **LIME** (200 samples, added in
+v2.1.1) on the same ~64 SLIC superpixels with a black baseline.
 Evaluated on 100 test images (25 per class) with **deletion/insertion AUC** (Petsiuk et al., 2018) against a random
 baseline, and on 12 images with the **cascading model-parameter randomisation test** (Adebayo et al., 2018).
 

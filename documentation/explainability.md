@@ -7,7 +7,7 @@ Code: [`v2/src/btmri/xai.py`](../v2/src/btmri/xai.py), [`v2/scripts/run_xai.py`]
 [`04_explainable_ai.ipynb`](../v2/notebooks/04_explainable_ai.ipynb); results in [`v2/results/xai/`](../v2/results/xai/summary.md).
 
 **Summary.** Heatmaps show which pixels a method associates with the prediction. They are *not* evidence that the model
-uses tumour tissue, and in this study none of the five methods beats a random map on the deletion test. Treat them as a
+uses tumour tissue, and in this study none of the six methods beats a random map on the deletion test. Treat them as a
 debugging aid, not as a clinical explanation.
 
 ## Set-up
@@ -16,7 +16,7 @@ debugging aid, not as a clinical explanation.
 - Images: 100 Testing images (25 per true class, `sample(25, random_state=42)`) for faithfulness and agreement;
   12 of them (3 per class) for the sanity check.
 - Every map is clipped/absolute-valued as described below and min-max normalised to [0, 1].
-- Run: `python scripts/run_xai.py [threads]` from `v2/` (default 8 torch threads).
+- Run: `python scripts/run_xai.py [threads]` and, for LIME, `python scripts/run_lime.py [threads]` from `v2/` (default 8 torch threads).
 
 ## Methods
 | Method | How it works | Settings in this project |
@@ -26,18 +26,8 @@ debugging aid, not as a clinical explanation.
 | **Integrated Gradients** (Sundararajan et al., 2017) | Averages gradients along the straight path from a baseline image to the input and multiplies by (input − baseline). | Captum, black baseline, 32 steps, absolute value. |
 | **Occlusion** (Zeiler and Fergus, 2014) | Slides a black square over the image and records how much the class logit drops. | Captum, 32×32 window, stride 16, positive drops only. |
 | **KernelSHAP on superpixels** (Lundberg and Lee, 2017) | Splits the image into superpixels, switches random subsets off (black) and fits a weighted linear model whose coefficients approximate Shapley values of the class logit. | SLIC with 64 segments and compactness 0.1, 200 samples, black baseline, positive values only. |
-| **LIME** (Ribeiro et al., 2016) | Fits a sparse, locally weighted linear model on random superpixel perturbations. | **Not run in this project.** KernelSHAP on superpixels is the perturbation-based method that was evaluated; LIME is described here for completeness. |
+| **LIME** (Ribeiro et al., 2016) | Switches random subsets of superpixels off and fits a linear model weighted by how close each perturbed image is to the original. | Same SLIC superpixels, black baseline and 200 samples as KernelSHAP; exponential kernel (width 0.25) on cosine distance; ridge regression (α = 1) on the class logit; positive coefficients only. Added in v2.1.1 ([details](#lime-added-in-v211)). |
 
-### Running LIME yourself (not part of the reported results)
-The same model wrapper and superpixels work with Captum's `Lime`:
-```python
-from captum.attr import Lime
-from btmri.xai import GreyModel, superpixels
-gm = GreyModel(model).eval()
-seg = torch.from_numpy(superpixels(x)).long()[None, None]     # x: (1, 1, 224, 224) in [0, 1]
-attr = Lime(gm).attribute(x, target=target, baselines=0.0, feature_mask=seg, n_samples=200, perturbations_per_eval=50)
-```
-No LIME numbers are reported anywhere in this repository.
 
 ## Faithfulness: deletion and insertion (Petsiuk et al., 2018)
 Pixels are ranked by the map (ties broken randomly with a fixed seed). **Deletion** sets the top pixels to black in 32 steps
@@ -52,6 +42,7 @@ rise fast (high area). A random map is the reference. Values: mean (standard dev
 | Integrated Gradients | 0.283 (0.26) | 0.679 (0.25) | 97.8% |
 | Occlusion | 0.466 (0.33) | 0.803 (0.23) | 82.7% |
 | KernelSHAP (SLIC superpixels) | 0.400 (0.35) | 0.749 (0.25) | 76.5% |
+| LIME (SLIC superpixels) | 0.363 (0.36) | 0.777 (0.25) | 80.6% |
 | Random baseline | 0.283 (0.15) | 0.497 (0.37) | 57.9% |
 
 - **Deletion:** no method is better than random; Integrated Gradients is level with it (0.283
@@ -74,8 +65,9 @@ correlation (maps average-pooled to 56×56). A method that depends on the learne
 | Integrated Gradients | 0.94 | 0.94 | 0.93 | 0.91 | 0.89 | 0.84 |
 | Occlusion | 0.14 | 0.04 | 0.23 | 0.07 | 0.06 | 0.03 |
 | KernelSHAP (SLIC superpixels) | 0.24 | 0.02 | 0.05 | 0.17 | 0.17 | 0.21 |
+| LIME (SLIC superpixels) | -0.03 | 0.04 | 0.06 | 0.16 | -0.02 | -0.02 |
 
-- **Grad-CAM, occlusion and KernelSHAP** change almost completely once the classifier is randomised: they depend on the model.
+- **Grad-CAM, occlusion, KernelSHAP and LIME** change almost completely once the classifier is randomised: they depend on the model.
 - **Integrated Gradients** stays at 0.84 even with all layers random, so it mostly reflects the
   input image (edges and intensity), not the trained model: it fails the test.
 - **KernelSHAP** keeps a small correlation (0.21) after full randomisation because its superpixels depend on the image.
@@ -87,16 +79,63 @@ Figure: [`xai_sanity_check.png`](../v2/results/figures/xai_sanity_check.png).
 ## Agreement between methods
 Mean Spearman correlation between maps on the same image (100 images):
 
-| | Grad-CAM | Grad-CAM++ | Integrated Gradients | Occlusion | KernelSHAP (SLIC superpixels) |
-|---|---|---|---|---|---|
-| Grad-CAM | 1.00 | 0.84 | 0.51 | 0.38 | 0.22 |
-| Grad-CAM++ | 0.84 | 1.00 | 0.58 | 0.31 | 0.22 |
-| Integrated Gradients | 0.51 | 0.58 | 1.00 | 0.31 | 0.28 |
-| Occlusion | 0.38 | 0.31 | 0.31 | 1.00 | 0.18 |
-| KernelSHAP (SLIC superpixels) | 0.22 | 0.22 | 0.28 | 0.18 | 1.00 |
+| | Grad-CAM | Grad-CAM++ | Integrated Gradients | Occlusion | KernelSHAP (SLIC superpixels) | LIME (SLIC superpixels) |
+|---|---|---|---|---|---|---|
+| Grad-CAM | 1.00 | 0.84 | 0.51 | 0.38 | 0.22 | 0.31 |
+| Grad-CAM++ | 0.84 | 1.00 | 0.58 | 0.31 | 0.22 | 0.30 |
+| Integrated Gradients | 0.51 | 0.58 | 1.00 | 0.31 | 0.28 | 0.34 |
+| Occlusion | 0.38 | 0.31 | 0.31 | 1.00 | 0.18 | 0.22 |
+| KernelSHAP (SLIC superpixels) | 0.22 | 0.22 | 0.28 | 0.18 | 1.00 | 0.47 |
+| LIME (SLIC superpixels) | 0.31 | 0.30 | 0.34 | 0.22 | 0.47 | 1.00 |
 
-Only the two CAM methods agree closely; the perturbation and gradient methods highlight different pixels. Figure:
+Only the two CAM methods agree closely; LIME agrees best with KernelSHAP, which shares its superpixels; the other perturbation and gradient methods highlight different pixels. Figure:
 [`xai_agreement.png`](../v2/results/figures/xai_agreement.png).
+
+## LIME (added in v2.1.1)
+LIME was added in v2.1.1 alongside KernelSHAP, on the same 100 images (faithfulness, agreement) and 12
+images (sanity checks), with the same SLIC superpixels, black baseline, number of samples and target. Code:
+`lime()` in [`xai.py`](../v2/src/btmri/xai.py) and [`v2/scripts/run_lime.py`](../v2/scripts/run_lime.py); results in
+separate files (`results/xai/lime_*`, `method_agreement_spearman_with_lime.csv`, `target_class_sensitivity.csv`), so the
+original five-method files are unchanged. Recomputing the five original maps for the agreement matrix reproduced the saved
+5 × 5 agreement exactly (maximum difference 0).
+
+| | LIME | KernelSHAP |
+|---|---|---|
+| Deletion AUC ↓ (random 0.283) | 0.363 | 0.400 |
+| Insertion AUC ↑ (random 0.497) | 0.777 | 0.749 |
+| Share of map inside the foreground | 80.6% | 76.5% |
+| ρ after classifier randomised / after full randomisation | -0.03 / -0.02 | 0.24 / 0.21 |
+| ρ with the other-class maps (target-class check) | -0.15 | -0.20 |
+| ρ between three random seeds (stability) | 0.70 | 0.42 |
+| Agreement LIME ↔ KernelSHAP | 0.47 | |
+
+What LIME found:
+- **Faithfulness.** Insertion 0.777 is above random and above KernelSHAP, below Grad-CAM,
+  Grad-CAM++ and occlusion. Deletion 0.363 is, like every method except Integrated
+  Gradients (which only matches random), worse than the random map.
+- **Sanity check.** LIME passes the model-parameter randomisation test clearly: its correlation with the trained-model
+  map is already -0.03 after randomising only the classifier.
+- **Agreement.** LIME agrees most with KernelSHAP (0.47), which uses the same superpixels,
+  and only weakly with Grad-CAM (0.31) and occlusion (0.22).
+- **Stability.** With 200 samples, LIME maps from different random seeds agree better than KernelSHAP maps
+  (0.70 vs 0.42), but neither is fully stable.
+
+Settings: SLIC (64 segments, compactness 0.1), 200 samples with each superpixel kept with probability 0.5 (Captum's
+default sampler), weights exp(−d²/0.25²) with d the cosine distance between the binary superpixel vector and the all-on
+vector (as in the reference `lime` image explainer), weighted ridge regression (α = 1) on the class logit, positive
+coefficients kept. Example maps: [`xai_lime_examples.png`](../v2/results/figures/xai_lime_examples.png).
+
+## Target-class check (all six methods)
+On the 12 sanity images each map for the predicted class is compared with the maps for the other three classes
+(mean Spearman). A map that explains the decision should change when asked about another class:
+
+| Method | Grad-CAM | Grad-CAM++ | Integrated Gradients | Occlusion | KernelSHAP (SLIC superpixels) | LIME (SLIC superpixels) |
+|---|---|---|---|---|---|---|
+| ρ with other-class maps | -0.00 | 0.92 | 0.94 | -0.18 | -0.20 | -0.15 |
+
+Grad-CAM++ and Integrated Gradients barely change with the target class, consistent with their weak sanity-check results.
+The data (label) randomisation test of Adebayo et al. (2018) needs a model retrained on shuffled labels and was **not run**
+(this project does not retrain).
 
 ## How to read the heatmaps
 1. **Warm colours = higher attribution for the predicted class**, normalised per image; compare locations, not absolute values

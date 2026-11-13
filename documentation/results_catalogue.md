@@ -2,7 +2,7 @@
 
 [Documentation home](README.md) · [Top-level README](../README.md) · [v2 README](../v2/README.md)
 
-Every file in [`v2/results/`](../v2/results/) (44 files). The v1 results are in [`v1/results/`](../v1/results/)
+Every file in [`v2/results/`](../v2/results/) (52 files). The v1 results are in [`v1/results/`](../v1/results/)
 with the same layout as at the `v1.0` tag.
 
 ## `figures`
@@ -15,11 +15,12 @@ with the same layout as at the `v1.0` tag.
 | [`figures/roc_curves.png`](../v2/results/figures/roc_curves.png) | 54.2 kB | One-vs-rest ROC curves per class, leakage-aware model. |
 | [`figures/training_curves_clean.png`](../v2/results/figures/training_curves_clean.png) | 65.9 kB | Loss and validation metrics per epoch, leakage-aware run. |
 | [`figures/training_curves_naive.png`](../v2/results/figures/training_curves_naive.png) | 60.6 kB | Loss and validation metrics per epoch, naive run. |
-| [`figures/xai_agreement.png`](../v2/results/figures/xai_agreement.png) | 58.5 kB | Spearman agreement matrix between attribution methods. |
-| [`figures/xai_faithfulness.png`](../v2/results/figures/xai_faithfulness.png) | 60.3 kB | Deletion and insertion AUC per method vs random. |
+| [`figures/xai_agreement.png`](../v2/results/figures/xai_agreement.png) | 65.3 kB | Spearman agreement matrix between attribution methods. |
+| [`figures/xai_faithfulness.png`](../v2/results/figures/xai_faithfulness.png) | 62.7 kB | Deletion and insertion AUC per method vs random. |
 | [`figures/xai_grid_correct.png`](../v2/results/figures/xai_grid_correct.png) | 1.8 MB | Attribution maps for correctly classified Testing images. |
 | [`figures/xai_grid_misclassified.png`](../v2/results/figures/xai_grid_misclassified.png) | 1.4 MB | Attribution maps for the most confident errors. |
-| [`figures/xai_sanity_check.png`](../v2/results/figures/xai_sanity_check.png) | 83.7 kB | Cascading-randomisation curves per method. |
+| [`figures/xai_lime_examples.png`](../v2/results/figures/xai_lime_examples.png) | 903.4 kB | KernelSHAP and LIME maps side by side for two Testing images per class from the evaluation sample. |
+| [`figures/xai_sanity_check.png`](../v2/results/figures/xai_sanity_check.png) | 90.2 kB | Cascading-randomisation curves per method. |
 
 ## `(top level)`
 | File | Size | Contents |
@@ -69,9 +70,16 @@ with the same layout as at the `v1.0` tag.
 |---|---|---|
 | [`xai/faithfulness_per_image.csv`](../v2/results/xai/faithfulness_per_image.csv) | 70.7 kB; 600 rows | Per image and method: deletion AUC, insertion AUC, foreground share. |
 | [`xai/faithfulness_summary.csv`](../v2/results/xai/faithfulness_summary.csv) | 0.9 kB; 8 rows | Mean and standard deviation of the above per method. |
-| [`xai/method_agreement_spearman.csv`](../v2/results/xai/method_agreement_spearman.csv) | 0.6 kB; 5 rows | Mean Spearman correlation between methods (5 × 5). |
+| [`xai/lime_browser_timing.json`](../v2/results/xai/lime_browser_timing.json) | 0.3 kB | Seconds for 200 forward passes in headless Chrome (ONNX Runtime Web, one WASM thread), batches of 4, 10 and 50. |
+| [`xai/lime_faithfulness_per_image.csv`](../v2/results/xai/lime_faithfulness_per_image.csv) | 11.9 kB; 100 rows | LIME per image: deletion AUC, insertion AUC, foreground share, constant-map flag (same images as `faithfulness_per_image.csv`). |
+| [`xai/lime_sanity_cascading_randomisation.csv`](../v2/results/xai/lime_sanity_cascading_randomisation.csv) | 3.1 kB; 72 rows | LIME cascading model randomisation: per stage and image, Spearman with the trained-model map, constant-map flag. |
+| [`xai/lime_stability.csv`](../v2/results/xai/lime_stability.csv) | 2.5 kB; 72 rows | LIME and KernelSHAP maps with seeds 0, 1, 2: per image, Spearman between seed pairs. |
+| [`xai/lime_summary.json`](../v2/results/xai/lime_summary.json) | 1.7 kB | Summary of the LIME run: settings, faithfulness, sanity, agreement, target-class and seed-check means, run time. |
+| [`xai/method_agreement_spearman.csv`](../v2/results/xai/method_agreement_spearman.csv) | 0.6 kB; 5 rows | Mean Spearman correlation between the five original methods (5 × 5). |
+| [`xai/method_agreement_spearman_with_lime.csv`](../v2/results/xai/method_agreement_spearman_with_lime.csv) | 0.8 kB; 6 rows | Mean Spearman correlation between the six methods including LIME (6 × 6); the 5 × 5 part equals `method_agreement_spearman.csv`. |
 | [`xai/sanity_cascading_randomisation.csv`](../v2/results/xai/sanity_cascading_randomisation.csv) | 17.8 kB; 360 rows | Per stage, method and image: Spearman correlation with the trained-model map, constant-map flag. |
-| [`xai/summary.md`](../v2/results/xai/summary.md) | 1.5 kB | Text summary of the XAI results used in the README. |
+| [`xai/summary.md`](../v2/results/xai/summary.md) | 1.8 kB | Text summary of the XAI results used in the README. |
+| [`xai/target_class_sensitivity.csv`](../v2/results/xai/target_class_sensitivity.csv) | 9.1 kB; 216 rows | Per image, method and other class: Spearman between the map for the predicted class and the map for that other class. |
 
 ## Column reference for the main tables
 - `review/test_predictions.csv`: `relpath`, `true`, `pred`, `p_glioma`, `p_meningioma`, `p_notumor`, `p_pituitary`, `raw_p_glioma`, `raw_p_meningioma`, `raw_p_notumor`, `raw_p_pituitary`, `confidence`, `norm_entropy`, `uncertain`, `test_has_train_dup_strict`, `test_has_train_dup`, `test_dedup_rep`. `p_*` are calibrated probabilities (logits / T), `raw_p_*` uncalibrated.

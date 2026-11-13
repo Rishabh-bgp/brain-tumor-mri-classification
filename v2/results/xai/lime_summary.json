@@ -1,0 +1,48 @@
+{
+  "n_images_faithfulness": 100,
+  "n_images_sanity": 12,
+  "settings": {
+    "superpixels": "SLIC, 64 segments, compactness 0.1 (same as KernelSHAP)",
+    "n_samples": 200,
+    "baseline": "black (0)",
+    "kernel": "exp(-d^2/0.25^2), d = cosine distance to the all-on vector",
+    "surrogate": "weighted ridge regression, alpha = 1",
+    "target": "predicted class logit",
+    "map": "positive coefficients, min-max normalised"
+  },
+  "lime_deletion_auc_mean": 0.3625453884674561,
+  "lime_deletion_auc_std": 0.35926344377393277,
+  "lime_insertion_auc_mean": 0.7772608325317059,
+  "lime_insertion_auc_std": 0.24500863554689353,
+  "lime_inside_foreground_mean": 0.8062452550193159,
+  "lime_constant_maps": 0,
+  "lime_sanity_by_stage": {
+    "classifier": -0.030717301049051016,
+    "conv_head": 0.04147640517986089,
+    "blocks.6": 0.05500401689511947,
+    "blocks.4": 0.15574622739884558,
+    "blocks.2": -0.01599821503100271,
+    "conv_stem": -0.0182626250485125
+  },
+  "agreement_lime_vs": {
+    "gradcam": 0.30615233927697705,
+    "gradcampp": 0.3012055855216348,
+    "integrated_gradients": 0.34199292559115185,
+    "occlusion": 0.21900500059163516,
+    "kernel_shap": 0.4677630469856128
+  },
+  "agreement_5x5_recomputed_max_abs_diff": 0.0,
+  "target_class_sensitivity_mean_spearman": {
+    "gradcam": -0.00032103554437807463,
+    "gradcampp": 0.9174109066320479,
+    "integrated_gradients": 0.9427572940557282,
+    "occlusion": -0.17779844455162783,
+    "kernel_shap": -0.1987089026578136,
+    "lime": -0.14831698899198414
+  },
+  "seed_stability_mean_spearman": {
+    "lime": 0.704355070257193,
+    "kernel_shap": 0.41981739928743644
+  },
+  "seconds": 1084
+}

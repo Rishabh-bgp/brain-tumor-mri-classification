@@ -20,7 +20,8 @@ Concrete next steps, roughly in order of how much they would change the conclusi
 7. **Better uncertainty.** Compare temperature scaling with ensembles or conformal prediction sets, and add an
    out-of-distribution check so that non-MRI inputs are rejected.
 8. **Localisation ground truth for XAI.** Use the tumour masks in the figshare release to measure how much of each heatmap
-   falls on the tumour, extend the sanity check to more images, and run LIME alongside KernelSHAP with the same superpixels.
+   falls on the tumour, extend the sanity check to more images, and run the data (label) randomisation test, which needs a
+   model retrained on shuffled labels.
 9. **Larger or more modern backbones with a GPU.** Compare with ConvNeXt or ViT models and a hyper-parameter search, keeping the
    same leakage-aware split so the comparison is fair.
 10. **Demo.** Show precomputed maps for uploads where feasible (e.g. Grad-CAM++ in the browser) and add an input check that

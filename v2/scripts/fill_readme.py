@@ -62,6 +62,10 @@ if xai.exists():
     fa = pd.read_csv(xai); san = pd.read_csv(ROOT / "results/xai/sanity_cascading_randomisation.csv")
     L = {"gradcam": "Grad-CAM", "gradcampp": "Grad-CAM++", "integrated_gradients": "Integrated Gradients", "occlusion": "Occlusion",
          "kernel_shap": "KernelSHAP (SLIC)", "random": "Random baseline"}
+    if (ROOT / "results/xai/lime_faithfulness_per_image.csv").exists():  # LIME, v2.1.1 (scripts/run_lime.py)
+        fa = pd.concat([fa, pd.read_csv(ROOT / "results/xai/lime_faithfulness_per_image.csv")[fa.columns]], ignore_index=True)
+        san = pd.concat([san, pd.read_csv(ROOT / "results/xai/lime_sanity_cascading_randomisation.csv")], ignore_index=True)
+        L = {**{k: v for k, v in L.items() if k != "random"}, "lime": "LIME (SLIC)", "random": "Random baseline"}
     t = ["| Method | Deletion AUC ↓ | Insertion AUC ↑ | Mass on head region | ρ after classifier randomised | ρ after full randomisation |", "|---|---|---|---|---|---|"]
     for k in L:
         r = fa[fa.method == k]
