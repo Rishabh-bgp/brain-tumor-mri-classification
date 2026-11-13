@@ -11,7 +11,7 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 URL = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000/"
 CL = ["glioma", "meningioma", "notumor", "pituitary"]
-pred = pd.read_csv(ROOT / "results/review/test_predictions.csv").set_index("relpath")
+pred = pd.read_csv(ROOT / "v2/results/review/test_predictions.csv").set_index("relpath")
 presets = json.loads((ROOT / "docs/presets.json").read_text())
 tau = json.loads((ROOT / "docs/stats.json").read_text())["conf_threshold"]
 ok = True

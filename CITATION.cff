@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use this software or its results, please cite it as below."
+title: "Brain Tumour MRI Classification: Leakage-Aware, Calibrated and Explainable EfficientNet-B0"
+abstract: >-
+  Four-way brain MRI slice classification (glioma, meningioma, pituitary tumour, no tumour) on the Kaggle Brain Tumor
+  MRI Dataset with a perceptual-hash duplicate audit, a leakage-aware split, an EfficientNet-B0 fine-tuned on a CPU,
+  temperature scaling with an uncertainty flag, sanity-checked explanation methods and an in-browser ONNX demo.
+  Research and education project, not a medical device.
+type: software
+authors:
+  - family-names: Aryan
+    given-names: Rishabh
+    affiliation: "Indian Institute of Information Technology Bhagalpur"
+version: 2.1.0
+license: MIT
+repository-code: "https://github.com/Rishabh-bgp/brain-tumor-mri-classification"
+url: "https://rishabh-bgp.github.io/brain-tumor-mri-classification/"
+keywords:
+  - brain tumour
+  - MRI
+  - image classification
+  - data leakage
+  - near-duplicate detection
+  - calibration
+  - explainable AI
+  - EfficientNet
+  - ONNX
+references:
+  - type: data
+    title: "Brain Tumor MRI Dataset"
+    authors:
+      - family-names: Nickparvar
+        given-names: Masoud
+    url: "https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset"
+    version: "2"
+    license: CC-BY-4.0

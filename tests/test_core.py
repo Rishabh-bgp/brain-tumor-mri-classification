@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "v2" / "src"))  # tests cover the current (v2) code
 
 from btmri.calibrate import choose_threshold, ece, fit_temperature, norm_entropy, softmax  # noqa: E402
 from btmri.dedup import UnionFind, hamming_matrix  # noqa: E402
@@ -43,7 +43,7 @@ def test_temperature_and_threshold():
     assert 0.5 <= thr["conf_threshold"] <= 0.99
 
 
-SPLITS = ROOT / "results/review/hashes_and_groups.csv"
+SPLITS = ROOT / "v2/results/review/hashes_and_groups.csv"
 
 
 @pytest.mark.skipif(not SPLITS.exists(), reason="split file not built")
